@@ -1,0 +1,14 @@
+{
+    "name": "phcastello/captchadecay",
+    "description": "Local synthetic CAPTCHA dataset generation for an academic PoC",
+    "type": "project",
+    "require": {
+        "php": ">=8.2 <8.6",
+        "ext-gd": "*",
+        "dapphp/securimage": "4.0.2"
+    },
+    "config": {
+        "allow-plugins": false,
+        "sort-packages": true
+    }
+}

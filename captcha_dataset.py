@@ -1,4 +1,4 @@
-"""Coleta imagens do CAPTCHA dos Correios para um dataset 85/10/5."""
+"""Aquisição auxiliar e limitada de amostras reais do CAPTCHA dos Correios."""
 
 import argparse
 import hashlib
@@ -13,13 +13,16 @@ from html.parser import HTMLParser
 from http.client import IncompleteRead, RemoteDisconnected
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
+from urllib.parse import urljoin, urlsplit, urlunsplit
 from urllib.request import HTTPCookieProcessor, Request, build_opener
-from uuid import uuid4
 
 URL = "https://rastreamento.correios.com.br/app/index.php#"
-SPLITS = {"train": 85, "validation": 10, "test": 5}
+SPLITS = {"train": 60, "validation": 20, "test": 20}
 LOGGER = logging.getLogger(__name__)
+
+
+class RateLimitError(RuntimeError):
+    """Interrompe a coleta quando o servidor limita as requisições."""
 
 
 class _CaptchaParser(HTMLParser):
@@ -43,27 +46,28 @@ def _split_counts(count):
 
 
 def _retry_after_seconds(value):
-    """Interpreta Retry-After em segundos ou como data HTTP."""
+    """Interpreta segundos ou data HTTP; retorna None se ausente ou inválido."""
     if not value:
-        return 0.0
+        return None
     value = value.strip()
     try:
         if value.isascii() and value.isdigit():
             seconds = float(value)
-            return seconds if math.isfinite(seconds) else 0.0
+            return seconds if math.isfinite(seconds) else None
         deadline = parsedate_to_datetime(value)
         if deadline.tzinfo is None:
             deadline = deadline.replace(tzinfo=timezone.utc)
         return max(0.0, (deadline - datetime.now(timezone.utc)).total_seconds())
     except (TypeError, ValueError, OverflowError):
-        return 0.0
+        return None
 
 
 def _fetch(session, request, *, timeout, retries, backoff):
     """Repete GETs em falhas temporárias, respeitando o prazo do servidor."""
-    for attempt in range(retries + 1):
-        retry_after = 0.0
-        rate_limited = False
+    attempt = 0
+    rate_limit_retried = False
+    while True:
+        retry_after = None
         try:
             with session.open(request, timeout=timeout) as response:
                 return (
@@ -73,11 +77,29 @@ def _fetch(session, request, *, timeout, retries, backoff):
                     response.read(),
                 )
         except HTTPError as error:
-            if error.code not in {408, 429, 500, 502, 503, 504}:
+            if error.code == 429:
+                retry_after = _retry_after_seconds(error.headers.get("Retry-After"))
+                error.close()
+                if rate_limit_retried:
+                    raise RateLimitError(
+                        "HTTP 429 novamente após Retry-After. Coleta interrompida. "
+                        "As imagens já salvas foram preservadas; execute novamente posteriormente."
+                    ) from None
+                if retry_after is None:
+                    raise RateLimitError(
+                        "Rate limit atingido (HTTP 429). O servidor não informou Retry-After válido. "
+                        "A coleta foi interrompida; as imagens já salvas foram preservadas "
+                        "e a coleta poderá ser continuada posteriormente."
+                    ) from None
+                wait = retry_after + 2.0
+                LOGGER.warning("HTTP 429. Retry-After=%g s. Aguardando %g s.", retry_after, wait)
+                time.sleep(wait)
+                rate_limit_retried = True
+                continue
+            if error.code not in {408, 500, 502, 503, 504}:
                 error.close()
                 raise
             reason = f"HTTP {error.code} ({error.reason})"
-            rate_limited = error.code == 429
             retry_after = _retry_after_seconds(error.headers.get("Retry-After"))
             error.close()
         except (URLError, TimeoutError, ConnectionError, IncompleteRead, RemoteDisconnected) as error:
@@ -88,17 +110,20 @@ def _fetch(session, request, *, timeout, retries, backoff):
                 f"{reason}: falha após {retries + 1} tentativa(s). "
                 "As imagens já salvas foram preservadas. Aguarde antes de tentar novamente."
             )
-        wait = max(backoff * 2 ** attempt, retry_after, 60.0 if rate_limited else 0.0)
+        wait = max(backoff * 2 ** attempt, retry_after or 0.0)
+        if retry_after is not None:
+            LOGGER.warning("%s. Retry-After=%g s.", reason, retry_after)
         LOGGER.warning(
-            "%s. Aguardando %.1f s antes da nova tentativa %s/%s.",
+            "Erro temporário: %s. Nova tentativa em %g s (%s/%s).",
             reason, wait, attempt + 1, retries,
         )
         time.sleep(wait)
+        attempt += 1
 
 
 def collect_captchas(
     count: int,
-    output_dir: str | Path = "dataset",
+    output_dir: str | Path = "dataset/real",
     *,
     delay: float = 5.0,
     timeout: float = 30.0,
@@ -139,7 +164,7 @@ def collect_captchas(
     saved = dict.fromkeys(SPLITS, 0)
 
     session = build_opener(HTTPCookieProcessor(http.cookiejar.CookieJar()))
-    session.addheaders = [("User-Agent", "VulnCaptchaDataset/1.0")]
+    session.addheaders = [("User-Agent", "CaptchaDecay-Academic-PoC/1.0")]
     page_url, _, charset, page_data = _fetch(
         session, url, timeout=timeout, retries=retries, backoff=backoff
     )
@@ -148,17 +173,17 @@ def collect_captchas(
     parser.feed(html)
     if not parser.src:
         raise RuntimeError("Não foi encontrado um img#captcha_image com atributo src.")
-    image_url = urljoin(page_url, parser.src)
+    image_parts = urlsplit(urljoin(page_url, parser.src))
+    LOGGER.info("Página carregada. CAPTCHA encontrado em %s.", image_parts.path)
 
     # Limita tentativas para não permanecer num loop caso o servidor repita imagens.
     for attempt in range(count * 3):
         if attempt:
             time.sleep(delay)
-        parts = urlsplit(image_url)
-        query = parse_qsl(parts.query, keep_blank_values=True)
-        query.append(("_dataset", uuid4().hex))
-        fresh_url = urlunsplit(parts._replace(query=urlencode(query)))
-        request = Request(fresh_url, headers={"Referer": page_url, "Cache-Control": "no-cache"})
+        # Reproduz o refresh do frontend, substituindo a query anterior.
+        image_url = urlunsplit(image_parts._replace(query=str(random.random()), fragment=""))
+        LOGGER.info("Requisitando novo CAPTCHA.")
+        request = Request(image_url, headers={"Referer": page_url})
         _, content_type, _, data = _fetch(
             session, request, timeout=timeout, retries=retries, backoff=backoff
         )
@@ -179,16 +204,19 @@ def collect_captchas(
         if sum(saved.values()) == count:
             return saved
 
-    raise RuntimeError(f"Muitas imagens repetidas: foram salvas {sum(saved.values())}/{count}.")
+    raise RuntimeError(
+        f"Muitas imagens repetidas: não foi possível obter imagens novas. "
+        f"Foram salvas {sum(saved.values())}/{count}; os arquivos existentes foram preservados."
+    )
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--count", type=int, default=100, help="Imagens novas a coletar (padrão: 100).")
-    parser.add_argument("--output", type=Path, default=Path("dataset"), help="Pasta do dataset.")
+    parser.add_argument("--output", type=Path, default=Path("dataset/real"), help="Pasta das amostras reais.")
     parser.add_argument("--delay", type=float, default=5.0, help="Intervalo em segundos (padrão: 5).")
     parser.add_argument("--timeout", type=float, default=30.0, help="Timeout de cada requisição.")
-    parser.add_argument("--retries", type=int, default=3, help="Novas tentativas por requisição (padrão: 3).")
+    parser.add_argument("--retries", type=int, default=3, help="Retries de erros temporários, exceto HTTP 429 (padrão: 3).")
     parser.add_argument("--backoff", type=float, default=60.0, help="Espera inicial entre novas tentativas (padrão: 60 s).")
     parser.add_argument("--seed", type=int, default=42, help="Semente para embaralhar a divisão.")
     args = parser.parse_args()
@@ -198,6 +226,8 @@ def main():
             args.count, args.output, delay=args.delay, timeout=args.timeout,
             retries=args.retries, backoff=args.backoff, seed=args.seed
         )
+    except RateLimitError as error:
+        parser.exit(1, f"{error}\n")
     except (ValueError, RuntimeError, OSError, URLError) as error:
         parser.exit(1, f"Erro: {error}\n")
     except KeyboardInterrupt:

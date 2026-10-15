@@ -1,0 +1,198 @@
+import base64
+import csv
+import io
+import json
+import os
+import shutil
+import struct
+import subprocess
+import tempfile
+import unittest
+import zlib
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+PHP = os.environ.get("PHP_BINARY") or shutil.which("php")
+
+
+@unittest.skipUnless(PHP, "Instale PHP CLI com GD/FreeType para testar o gerador.")
+class GeneratorTests(unittest.TestCase):
+    def run_cli(self, *arguments):
+        return subprocess.run([PHP, str(ROOT / "generator/generate.php"), *map(str, arguments)],
+                              cwd=ROOT, capture_output=True, text=True, timeout=30)
+
+    def php_json(self, code, *arguments):
+        result = subprocess.run([PHP, "-r", "require $argv[1]; " + code,
+                                 str(ROOT / "generator/generate.php"), *map(str, arguments)],
+                                cwd=ROOT, capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout)
+
+    def test_parsing_options_and_defaults(self):
+        code = "echo json_encode(parse_options(array_slice($argv, 2)));"
+        defaults = self.php_json(code)
+        self.assertEqual(defaults["count"], 1000)
+        self.assertEqual(defaults["seed"], 42)
+        self.assertEqual(defaults["train_ratio"], 0.9)
+        config = self.php_json(code, "--count=20", "--seed", 7, "--output", "custom",
+                               "--train-ratio", 0.75, "--validation-ratio=0.25")
+        self.assertEqual((config["count"], config["seed"], config["output"]), (20, 7, "custom"))
+        self.assertEqual(config["validation_ratio"], 0.25)
+
+    def test_help_and_invalid_cli_options(self):
+        self.assertEqual(self.run_cli("--help").returncode, 0)
+        for arguments in (("--count", 0), ("--count", -1), ("--count", "1.5"),
+                          ("--count", "99999999999999999999999999"), ("--count",),
+                          ("--seed", -1), ("--seed", "NaN"), ("--seed", 2147483648),
+                          ("--train-ratio", "NaN"), ("--train-ratio", 1.2),
+                          ("--train-ratio", 0.8, "--validation-ratio", 0.3),
+                          ("--count", 1, "--count", 2), ("--unknown", 1)):
+            with self.subTest(arguments=arguments):
+                result = self.run_cli(*arguments)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn("Erro:", result.stderr)
+
+    def test_seed_metadata_lengths_charset_and_visual_ranges(self):
+        code = """
+            $c = parse_options(array_slice($argv, 2));
+            $samples = [];
+            for ($i = 1; $i <= 32; ++$i) { $samples[] = sample_metadata($c, $i, 'train'); }
+            echo json_encode(['config' => $c, 'samples' => $samples]);
+        """
+        first = self.php_json(code, "--seed", 42)
+        self.assertEqual(first, self.php_json(code, "--seed", 42))
+        self.assertNotEqual(first["samples"], self.php_json(code, "--seed", 7)["samples"])
+        config = first["config"]
+        self.assertGreater(len({row["length"] for row in first["samples"]}), 1)
+        for row in first["samples"]:
+            self.assertEqual(len(row["label"]), row["length"])
+            self.assertTrue(config["min_length"] <= row["length"] <= config["max_length"])
+            self.assertTrue(set(row["label"]) <= set(config["charset"]))
+            self.assertRegex(row["filename"], r"^\d{8}\.png$")
+            self.assertNotIn(row["label"], row["filename"])
+            for name in ("perturbation", "num_lines", "noise_level", "font_ratio"):
+                self.assertTrue(config[name][0] <= row[name] <= config[name][1])
+            for name in ("image_bg_color", "text_color", "line_color"):
+                self.assertIn(row[name], config[name])
+
+    def test_split_distribution_is_deterministic_and_configurable(self):
+        code = "$c = parse_options(array_slice($argv, 2)); echo json_encode(batch_splits($c, 1));"
+        first = self.php_json(code, "--count", 20)
+        self.assertEqual(first.count("train"), 18)
+        self.assertEqual(first.count("validation"), 2)
+        self.assertEqual(first, self.php_json(code, "--count", 20))
+        self.assertNotEqual(first, self.php_json(code, "--count", 20, "--seed", 7))
+        other = self.php_json(code, "--count", 20, "--train-ratio", 0.6, "--validation-ratio", 0.4)
+        self.assertEqual(other.count("train"), 12)
+        self.assertEqual(other.count("validation"), 8)
+
+    def test_invalid_configuration_has_clear_error(self):
+        cases = ({"min_length": 7, "max_length": 3}, {"width": 0}, {"height": 999999},
+                 {"charset": ""}, {"charset": "AAB"}, {"charset": "á"},
+                 {"perturbation": [0.8, 0.2]}, {"num_lines": [-1, 5]},
+                 {"noise_level": [0, 11]}, {"font_ratio": [0.1, 1.5]},
+                 {"text_color": ["bad"]}, {"line_color": []}, {"unknown_property": 1})
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "config.php"
+            for config in cases:
+                with self.subTest(config=config):
+                    encoded = base64.b64encode(json.dumps(config).encode()).decode()
+                    path.write_text(f"<?php return json_decode(base64_decode('{encoded}'), true);", encoding="utf-8")
+                    result = self.run_cli("--config", path)
+                    self.assertEqual(result.returncode, 1)
+                    self.assertIn("Erro:", result.stderr)
+                    self.assertNotIn("Fatal error", result.stderr)
+
+    def test_configuration_overrides_and_cli_precedence(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "config.php"
+            path.write_text("<?php return ['charset' => 'AB2', 'min_length' => 2, "
+                            "'max_length' => 3, 'seed' => 7, 'count' => 5];", encoding="utf-8")
+            config = self.php_json("echo json_encode(parse_options(array_slice($argv, 2)));",
+                                   "--config", path, "--count", 10)
+            self.assertEqual(config["charset"], "AB2")
+            self.assertEqual(config["count"], 10)
+            self.assertEqual(config["seed"], 7)
+            self.assertEqual((config["min_length"], config["max_length"]), (2, 3))
+
+    def assert_png(self, path):
+        data = path.read_bytes()
+        self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
+        self.assertEqual(struct.unpack("!II", data[16:24]), (215, 80))
+        position = 8
+        kinds = []
+        while position < len(data):
+            size = struct.unpack("!I", data[position:position + 4])[0]
+            kind = data[position + 4:position + 8]
+            payload = data[position + 8:position + 8 + size]
+            checksum = struct.unpack("!I", data[position + 8 + size:position + 12 + size])[0]
+            self.assertEqual(zlib.crc32(kind + payload), checksum)
+            kinds.append(kind)
+            position += size + 12
+        self.assertEqual(position, len(data))
+        self.assertIn(b"IDAT", kinds)
+        self.assertEqual(kinds[-1], b"IEND")
+
+    def test_png_csv_incremental_generation_and_reproducibility(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder) / "first"
+            result = self.run_cli("--count", 20, "--seed", 42, "--output", root)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((root / "train").is_dir())
+            self.assertTrue((root / "validation").is_dir())
+            self.assertFalse((root / "test").exists())
+            original_csv = (root / "labels.csv").read_bytes()
+            rows = list(csv.DictReader(io.StringIO(original_csv.decode())))
+            self.assertEqual(len(rows), 20)
+            self.assertEqual(sum(row["split"] == "train" for row in rows), 18)
+            images = {path: path.read_bytes() for path in root.glob("*/*.png")}
+            self.assertEqual(len(images), 20)
+            self.assertEqual(len({row["filename"] for row in rows}), 20)
+            for row in rows:
+                path = root / row["split"] / row["filename"]
+                self.assert_png(path)
+                self.assertEqual(int(row["length"]), len(row["label"]))
+                self.assertNotIn(row["label"], row["filename"])
+                self.assertEqual(row["securimage_version"], "4.0.2")
+            result = self.run_cli("--count", 2, "--seed", 42, "--output", root)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((root / "labels.csv").read_bytes().startswith(original_csv))
+            new_rows = list(csv.DictReader((root / "labels.csv").read_text().splitlines()))
+            self.assertEqual(len(new_rows), 22)
+            self.assertEqual([row["filename"] for row in new_rows[-2:]], ["00000021.png", "00000022.png"])
+            self.assertEqual(len(list(root.glob("*/*.png"))), 22)
+            for path, data in images.items():
+                self.assertEqual(path.read_bytes(), data)
+            second = Path(folder) / "second"
+            self.assertEqual(self.run_cli("--count", 20, "--seed", 42, "--output", second).returncode, 0)
+            self.assertEqual((second / "labels.csv").read_bytes(), original_csv)
+
+    def test_orphan_png_is_preserved_and_reported(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "train" / "00000001.png"
+            path.parent.mkdir()
+            path.write_bytes(b"original orphan")
+            result = self.run_cli("--count", 1, "--output", folder)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("PNG sem metadata", result.stderr)
+            self.assertEqual(path.read_bytes(), b"original orphan")
+
+    def test_incomplete_or_duplicate_csv_is_preserved_and_reported(self):
+        with tempfile.TemporaryDirectory() as folder:
+            self.assertEqual(self.run_cli("--count", 1, "--output", folder).returncode, 0)
+            path = Path(folder) / "labels.csv"
+            original = path.read_bytes()
+            for suffix, message in ((b"00000002.png,ABC", "Linha incompleta"),
+                                    (original.splitlines(keepends=True)[1], "duplicada")):
+                with self.subTest(message=message):
+                    changed = original + suffix
+                    path.write_bytes(changed)
+                    result = self.run_cli("--count", 1, "--output", folder)
+                    self.assertEqual(result.returncode, 1)
+                    self.assertIn(message, result.stderr)
+                    self.assertEqual(path.read_bytes(), changed)
+                    self.assertEqual(len(list(Path(folder).glob("*/*.png"))), 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

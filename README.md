@@ -1,66 +1,130 @@
-# VulnCaptcha
+# CaptchaDecay
 
-Módulo Python para coletar o `src` de `img#captcha_image` na página de
-[rastreamento dos Correios](https://rastreamento.correios.com.br/app/index.php#).
-Usa somente a biblioteca padrão do Python 3.10 ou superior.
+PoC acadêmica para estudar a resistência de CAPTCHAs visuais legados diante
+de visão computacional moderna. Esta etapa prepara os dados; não implementa
+reconhecimento, treinamento, inferência ou OCR.
 
-## Terminal
+## Metodologia
+
+O dataset é híbrido. O conjunto **sintético** é gerado localmente com a biblioteca
+oficial [Securimage](https://github.com/dapphp/securimage), usada somente como
+gerador de imagens. Isso permite produzir grandes quantidades de dados sem
+requisições adicionais ao serviço analisado. O conjunto **real** será usado
+para adaptação e avaliação após rotulagem manual.
+
+O reconhecedor futuro será desenvolvido independentemente. Nenhuma arquitetura,
+código, peso, dataset, preprocessing ou pipeline de projetos existentes de
+CAPTCHA solving, incluindo `securimage_solver`, é utilizado.
+
+| Conjunto | Split | Proporção | Finalidade futura |
+| --- | --- | --- | --- |
+| synthetic | train | 90% | Treinamento inicial |
+| synthetic | validation | 10% | Validação sintética |
+| real | train | 60% | Fine-tuning |
+| real | validation | 20% | Validação / seleção de checkpoint |
+| real | test | 20% | Avaliação final intocável |
+
+Não existe `synthetic/test`. As proporções são arredondadas por lote; lotes
+pequenos podem ter splits vazios. Arquivos antigos nunca são redistribuídos.
+
+```text
+generator/
+  generate.php         # geração local via CLI
+  config.php           # defaults e faixas visuais
+  organize_real.py     # organização segura e índice para rotulagem manual
+  README.md
+dataset/
+  synthetic/{train,validation}/
+  synthetic/labels.csv # criado pelo gerador; ignorado pelo Git
+  real/{train,validation,test}/
+  real/labels.csv      # label vazio significa ground truth ainda desconhecido
+tests/
+captcha_dataset.py    # aquisição auxiliar limitada de amostras reais
+composer.json
+composer.lock
+```
+
+## Gerar dados sintéticos
+
+Requisitos: PHP CLI 8.2–8.5, GD com FreeType e Composer. Não é necessário
+servidor web. A instalação requer internet; a geração e os testes são locais.
 
 ```powershell
-python -m captcha_dataset --count 100 --output dataset --delay 5
+composer install
+php generator/generate.php --count 1000 --seed 42
 ```
 
-Esse comando adiciona 100 imagens novas: 85 em `dataset/train`, 10 em
-`dataset/validation` e 5 em `dataset/test`. A quantidade padrão é 100.
-As pastas são criadas automaticamente e as imagens são salvas como PNG.
-O caminho de saída é relativo ao diretório de execução.
+Cada execução adiciona a quantidade solicitada em `dataset/synthetic`, sem
+sobrescrever PNGs ou linhas anteriores do CSV. Nomes como `00000001.png` são
+independentes do label. O CSV contém label, split, dimensões, parâmetros visuais,
+seed, índice, seed de renderização, hash da configuração e versão do Securimage.
 
-## Uso na PoC
+Edite [generator/config.php](generator/config.php) para mudar charset,
+comprimento (inicialmente 4–6), resolução (215×80), faixas de distorção, linhas,
+ruído, tamanho relativo da fonte e paletas. Esses valores iniciais **não são
+estimativas dos parâmetros dos Correios**; devem ser calibrados após rotulagem
+das amostras reais. Consulte [generator/README.md](generator/README.md) para
+opções, reprodução e tratamento de interrupções.
 
-```python
-from captcha_dataset import collect_captchas
+## Organizar e rotular dados reais
 
-resultado = collect_captchas(count=200, output_dir="dataset", delay=5.0)
-print(resultado)  # {'train': 170, 'validation': 20, 'test': 10}
-```
-
-Importar o módulo não inicia downloads. A sessão preserva cookies e o endereço
-da imagem é extraído do elemento da página, com URLs relativas resolvidas.
-Os downloads são sequenciais, com um intervalo configurável entre tentativas.
-O intervalo padrão é de cinco segundos; o servidor ainda pode limitar a coleta.
-Falhas temporárias de conexão e HTTP 408, 429, 500, 502, 503 e 504 são repetidas
-até três vezes por requisição (`--retries 3`), inclusive ao abrir a página inicial.
-As esperas padrão são de 60, 120 e 240 segundos (`--backoff 60`). Em HTTP 429,
-a espera mínima é sempre de 60 segundos. Se o servidor enviar `Retry-After`,
-em segundos ou data HTTP, o módulo aguarda pelo menos esse prazo.
-Outros erros HTTP interrompem a coleta imediatamente.
-
-### Limites e timeout
-
-`HTTP Error 429: Too Many Requests` indica um limite imposto pelo servidor.
-O módulo aguarda e tenta novamente, mas não há garantia de que o acesso será
-liberado nessas tentativas. Se o erro persistir, encerra a coleta preservando os
-arquivos. Aguarde mais tempo antes de reiniciar. Aumentar `--timeout` não
-remove esse limite.
-
-`timed out` indica que uma operação de rede excedeu o tempo de espera. Nesse
-caso, é possível aumentar `--timeout`, por exemplo para 60 segundos.
+As 105 imagens encontradas foram organizadas com seed 42: 63 em train, 21 em
+validation e 21 em test. A migração copia os bytes e conserva as aquisições
+originais em `dataset/train`, `dataset/validation` e `dataset/test` como backup.
+Essas pastas antigas não fazem parte do dataset canônico em `dataset/real`.
 
 ```powershell
-python -m captcha_dataset --count 20 --delay 10 --retries 3 --backoff 60
+python generator/organize_real.py --source dataset --output dataset/real --seed 42
 ```
 
-`--delay` controla a pausa normal entre downloads; `--backoff` controla a espera
-progressiva após uma falha temporária. `--retries 0` desativa novas tentativas.
+O script verifica SHA-256, evita duplicatas entre os splits e cria
+`real/labels.csv` com `filename,label,split,sha256,source,split_seed`. Preencha
+somente a coluna `label` manualmente; label vazio é explícito e nenhum texto
+é inferido pelo nome ou por OCR. Não use imagens de `real/test` para calibrar
+configurações ou selecionar checkpoints.
 
-A divisão 85/10/5 se aplica a cada lote concluído. Para quantidades que não são
-múltiplos de 20, as contagens são arredondadas pelos maiores restos, mantendo o
-total solicitado. A divisão é embaralhada com a semente configurável `--seed`
-(padrão: 42). Lotes anteriores são preservados, sem redistribuição.
+Novas execuções preservam labels preenchidos e os splits existentes. A seed
+controla apenas a divisão das imagens ainda não organizadas; alterar a seed
+não move imagens já organizadas. O CSV é substituído atomicamente após escrita
+completa, mantendo os rótulos existentes.
 
-Os nomes usam SHA-256 do conteúdo. Imagens idênticas, inclusive de execuções
-anteriores, são ignoradas para evitar duplicatas entre os subconjuntos. Após
-três vezes a quantidade solicitada em tentativas, a coleta incompleta termina
-com erro. Em falhas ou interrupções, os arquivos já salvos permanecem e o lote
-parcial pode não manter a proporção. As imagens não recebem rótulos com o texto
-do CAPTCHA.
+## Aquisição real auxiliar
+
+`captcha_dataset.py` permanece disponível para aquisição limitada de amostras
+reais complementares. O destino padrão agora é `dataset/real`, dividido em
+60/20/20 por lote. Cada comando adiciona imagens novas; SHA-256 evita duplicatas.
+Após a coleta, execute `organize_real.py` para indexar os novos arquivos no CSV.
+
+```powershell
+python captcha_dataset.py --count 20 --delay 5
+python generator/organize_real.py
+```
+
+O coletor mantém uma sessão com cookies, carrega a página uma vez em execução
+normal e usa o refresh do endpoint de imagem. Identifica-se como
+`CaptchaDecay-Academic-PoC/1.0`. HTTP 429 com `Retry-After` válido (segundos ou
+data HTTP) permite uma nova tentativa após o prazo + 2 segundos. Novo 429 ou
+ausência de prazo válido interrompe imediatamente, preservando o progresso.
+Erros temporários 408/500/502/503/504 e de conexão mantêm backoff configurável
+(`--retries`, `--backoff`); o delay normal continua configurável (`--delay`,
+padrão 5 s). A ferramenta não tenta contornar rate limiting ou mecanismos anti-bot.
+Uma coleta interrompida pode ser retomada posteriormente com o mesmo comando.
+
+## Testes e atribuição
+
+Após instalar as dependências, execute:
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+Os testes cobrem nosso código e usam poucas imagens locais; respostas do coletor
+e sleeps são mockados. Não acessam os Correios. PHP deve estar no PATH ou ser
+informado em `PHP_BINARY`; sem PHP, os testes do gerador são explicitamente pulados.
+
+Synthetic CAPTCHA generation uses the open-source Securimage library.
+A versão oficial 4.0.2 é instalada via Composer e fixada no lockfile. O projeto
+upstream está sem manutenção; aqui é utilizado apenas localmente como gerador.
+Copyright e licenças upstream, incluindo os da fonte, permanecem em
+`vendor/dapphp/securimage`; consulte seu `LICENSE.txt` e `README.FONT.txt`.
+Nenhum arquivo upstream é copiado manualmente ou alterado neste projeto.

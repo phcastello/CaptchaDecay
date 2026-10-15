@@ -1,3 +1,17 @@
 __pycache__/
 *.py[cod]
 .venv/
+/vendor/
+/dataset/synthetic/*
+!/dataset/synthetic/train/
+!/dataset/synthetic/validation/
+/dataset/synthetic/train/*
+/dataset/synthetic/validation/*
+!/dataset/synthetic/train/.gitkeep
+!/dataset/synthetic/validation/.gitkeep
+# Original acquisitions remain on disk as a migration backup.
+# Existing tracked real images are unaffected by these rules.
+/dataset/train/*.png
+/dataset/validation/*.png
+/dataset/test/*.png
+*.tmp
