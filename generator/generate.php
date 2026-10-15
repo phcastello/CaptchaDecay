@@ -1,15 +1,17 @@
 <?php
 declare(strict_types=1);
 
-use Random\Engine\Mt19937;
+use Random\Engine\Xoshiro256StarStar;
 use Random\Randomizer;
 
-const CSV_COLUMNS = [
+const RNG_SCHEME = 'xoshiro256starstar-sha256-v2';
+const LEGACY_CSV_COLUMNS = [
     'filename', 'label', 'split', 'length', 'width', 'height',
     'perturbation', 'num_lines', 'noise_level', 'font_ratio',
     'image_bg_color', 'text_color', 'line_color', 'seed', 'index',
     'render_seed', 'config_sha256', 'securimage_version',
 ];
+const CSV_COLUMNS = [...LEGACY_CSV_COLUMNS, 'rng_scheme'];
 
 function checked_integer(mixed $value, string $name, int $min, int $max): int
 {
@@ -119,15 +121,16 @@ function parse_options(array $arguments): array
     return validate_config($config);
 }
 
-function derived_seed(int $seed, string $key): int
+function make_rng(int $seed, string $context): Randomizer
 {
-    return (int) hexdec(substr(hash('sha256', "$seed:$key"), 0, 7));
+    $material = hash('sha256', "captchadecay:rng-v2:$seed:$context", true);
+    return new Randomizer(new Xoshiro256StarStar($material));
 }
 
 function sample_metadata(array $config, int $index, string $split): array
 {
     // Separate engine: Securimage's mt_rand calls cannot change labels or metadata.
-    $rng = new Randomizer(new Mt19937(derived_seed($config['seed'], "sample:$index")));
+    $rng = make_rng($config['seed'], "sample:$index");
     $length = $rng->getInt($config['min_length'], $config['max_length']);
     $label = '';
     for ($i = 0; $i < $length; ++$i) {
@@ -149,7 +152,7 @@ function sample_metadata(array $config, int $index, string $split): array
     $sample += ['seed' => $config['seed'], 'index' => $index,
                 'render_seed' => $rng->getInt(0, 2147483647),
                 'config_sha256' => hash('sha256', json_encode($visual, JSON_THROW_ON_ERROR)),
-                'securimage_version' => '4.0.2'];
+                'securimage_version' => '4.0.2', 'rng_scheme' => RNG_SCHEME];
     return $sample;
 }
 
@@ -158,7 +161,7 @@ function batch_splits(array $config, int $start): array
     $train = (int) round($config['count'] * $config['train_ratio']);
     $splits = array_merge(array_fill(0, $train, 'train'),
                          array_fill(0, $config['count'] - $train, 'validation'));
-    $rng = new Randomizer(new Mt19937(derived_seed($config['seed'], "splits:$start")));
+    $rng = make_rng($config['seed'], "splits:$start");
     return $rng->shuffleArray($splits);
 }
 
@@ -211,7 +214,77 @@ function write_all($stream, string $data): void
     }
 }
 
-function generate_dataset(array $config): array
+function reject_duplicate(array $sample, array $existing): never
+{
+    $conflict = $sample['label'] !== $existing['label']
+        ? "\nInconsistência: os mesmos bytes estão associados a labels diferentes." : '';
+    throw new RuntimeException(
+        "Duplicata sintética detectada:\nnova amostra: índice {$sample['index']}, " .
+        "split {$sample['split']}, arquivo {$sample['filename']}\n" .
+        "arquivo existente: {$existing['split']}/{$existing['filename']}" . $conflict .
+        "\nNenhum arquivo anterior foi alterado; progresso anterior preservado."
+    );
+}
+
+// Called only after the entire old dataset has passed consistency checks.
+function migrate_legacy_csv($csv, string $root, array $records)
+{
+    $backup = "$root/labels.csv.pre-rng-v2-" . bin2hex(random_bytes(8)) . '.bak';
+    $backupStream = fopen($backup, 'xb');
+    if (!$backupStream) {
+        throw new RuntimeException('Não foi possível criar backup exclusivo do CSV legado.');
+    }
+    rewind($csv);
+    try {
+        $original = stream_get_contents($csv);
+        if ($original === false) {
+            throw new RuntimeException('Falha ao ler CSV legado; original preservado.');
+        }
+        write_all($backupStream, $original);
+        if (!fflush($backupStream)) {
+            throw new RuntimeException('Falha ao salvar backup do CSV legado; original preservado.');
+        }
+    } finally {
+        fclose($backupStream);
+    }
+    $temporary = tempnam($root, '.labels-rng-v2-');
+    if ($temporary === false) {
+        throw new RuntimeException('Falha ao criar CSV migrado; original preservado.');
+    }
+    try {
+        $stream = fopen($temporary, 'wb');
+        if (!$stream) {
+            throw new RuntimeException('Falha ao abrir CSV migrado; original preservado.');
+        }
+        try {
+            foreach ([CSV_COLUMNS, ...$records] as $row) {
+                if (fputcsv($stream, array_values($row), ',', '"', '') === false) {
+                    throw new RuntimeException('Falha ao escrever CSV migrado; original preservado.');
+                }
+            }
+            if (!fflush($stream)) {
+                throw new RuntimeException('Falha ao salvar CSV migrado; original preservado.');
+            }
+        } finally {
+            fclose($stream);
+        }
+        fclose($csv); // Windows requires closing the destination before replacement.
+        if (!rename($temporary, "$root/labels.csv")) {
+            throw new RuntimeException('Falha na substituição atômica do CSV; backup preservado.');
+        }
+    } finally {
+        if (is_file($temporary)) {
+            unlink($temporary);
+        }
+    }
+    $migrated = fopen("$root/labels.csv", 'r+b');
+    if (!$migrated) {
+        throw new RuntimeException('Falha ao reabrir CSV migrado; backup preservado.');
+    }
+    return $migrated;
+}
+
+function generate_dataset(array $config, ?callable $renderer = null): array
 {
     $config = validate_config($config);
     $root = rtrim($config['output'], '/\\');
@@ -232,15 +305,24 @@ function generate_dataset(array $config): array
         }
         $files = [];
         $indices = [];
+        $hashes = [];
+        $legacyRecords = [];
         $header = fgetcsv($csv, 0, ',', '"', '');
-        if ($header !== false && $header !== CSV_COLUMNS) {
+        $legacy = $header === LEGACY_CSV_COLUMNS;
+        if ($header !== false && $header !== CSV_COLUMNS && !$legacy) {
             throw new RuntimeException('Cabeçalho incompatível em labels.csv; arquivo preservado.');
         }
         while (($row = fgetcsv($csv, 0, ',', '"', '')) !== false) {
-            if (count($row) !== count(CSV_COLUMNS)) {
+            if (count($row) !== count($header)) {
                 throw new RuntimeException('Linha incompleta em labels.csv; revise antes de continuar.');
             }
-            $record = array_combine(CSV_COLUMNS, $row);
+            $record = array_combine($header, $row);
+            if ($legacy) {
+                $record['rng_scheme'] = 'legacy-unknown';
+                $legacyRecords[] = $record;
+            } elseif ($record['rng_scheme'] === '') {
+                throw new RuntimeException('rng_scheme ausente em labels.csv; arquivo preservado.');
+            }
             $file = $record['filename'];
             if (!preg_match('/^[0-9]{8}\.png$/D', $file) ||
                 !in_array($record['split'], ['train', 'validation'], true) ||
@@ -249,6 +331,14 @@ function generate_dataset(array $config): array
             }
             $indices[$file] = (int) substr($file, 0, 8);
             $files["{$record['split']}/$file"] = true;
+            $digest = hash_file('sha256', "$root/{$record['split']}/$file");
+            if ($digest === false) {
+                throw new RuntimeException("Não foi possível calcular SHA-256 de $file.");
+            }
+            if (isset($hashes[$digest])) {
+                reject_duplicate($record, $hashes[$digest]);
+            }
+            $hashes[$digest] = $record;
         }
         $size = ftell($csv);
         if ($size > 0) {
@@ -264,6 +354,9 @@ function generate_dataset(array $config): array
                 }
             }
         }
+        if ($legacy) {
+            $csv = migrate_legacy_csv($csv, $root, $legacyRecords);
+        }
         fseek($csv, 0, SEEK_END);
         if ($header === false && fputcsv($csv, CSV_COLUMNS, ',', '"', '') === false) {
             throw new RuntimeException('Falha ao escrever cabeçalho CSV.');
@@ -275,8 +368,12 @@ function generate_dataset(array $config): array
         $saved = ['train' => 0, 'validation' => 0];
         foreach (batch_splits($config, $start) as $offset => $split) {
             $sample = sample_metadata($config, $start + $offset, $split);
-            $data = render_png($sample);
+            $data = ($renderer ?? 'render_png')($sample);
             validate_png($data, $config['width'], $config['height']);
+            $digest = hash('sha256', $data);
+            if (isset($hashes[$digest])) {
+                reject_duplicate($sample, $hashes[$digest]);
+            }
             $path = "$root/$split/{$sample['filename']}";
             $output = fopen($path, 'xb');
             if (!$output) {
@@ -295,6 +392,7 @@ function generate_dataset(array $config): array
                 ftruncate($csv, $position);
                 throw new RuntimeException('Falha no CSV; imagem preservada sem metadata. Revise antes de continuar.');
             }
+            $hashes[$digest] = $sample;
             ++$saved[$split];
         }
         return $saved;

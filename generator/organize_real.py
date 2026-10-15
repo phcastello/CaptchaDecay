@@ -67,7 +67,8 @@ def organize_real(source="dataset", output="dataset/real", *, seed=42):
             if row and (row["split"] != split or row["sha256"] != digest):
                 raise ValueError("Imagem não corresponde ao labels.csv; arquivo preservado.")
             origin = ";".join(path.as_posix() for path in originals.get(digest, []))
-            records[path.name] = row or dict(zip(COLUMNS, [path.name, "", split, digest, origin, str(seed)]))
+            # This split predates this run; its original decision seed is unknown.
+            records[path.name] = row or dict(zip(COLUMNS, [path.name, "", split, digest, origin, ""]))
     if previous.keys() - records.keys():
         raise ValueError("labels.csv referencia imagem ausente; arquivo preservado.")
 
