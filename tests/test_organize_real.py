@@ -3,9 +3,11 @@ import hashlib
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
+import captcha_dataset as dataset
 from generator.organize_real import COLUMNS, organize_real
-from test_captcha_dataset import png
+from test_captcha_dataset import png, response
 
 
 class OrganizeRealTests(unittest.TestCase):
@@ -65,6 +67,8 @@ class OrganizeRealTests(unittest.TestCase):
             updated = self.read_labels(output)
             self.assertEqual(len(updated), 11)
             mapping = {row["filename"]: row for row in updated}
+            added = next(row for row in updated if row["filename"] not in {r["filename"] for r in rows})
+            self.assertEqual(added["split_seed"], "7")
             for row in rows:
                 self.assertEqual(mapping[row["filename"]], row)
             for path, data in previous.items():
@@ -93,7 +97,35 @@ class OrganizeRealTests(unittest.TestCase):
             row = next(row for row in self.read_labels(output) if row["filename"] == path.name)
             self.assertEqual(row["label"], "")
             self.assertEqual(row["split"], "test")
+            self.assertEqual(row["split_seed"], "")
             self.assertEqual(path.read_bytes(), data)
+
+    @patch("captcha_dataset.time.sleep")
+    @patch("captcha_dataset.build_opener")
+    def test_collection_seed_7_is_not_falsely_recorded_as_organizer_seed_42(self, build, sleep):
+        build.return_value.open.side_effect = [
+            response(b'<img id="captcha_image" src="captcha.php">'),
+            *[response(png(number), "image/png") for number in range(5)],
+        ]
+        with tempfile.TemporaryDirectory() as folder:
+            source, output = Path(folder) / "legacy", Path(folder) / "real"
+            dataset.collect_captchas(5, output, seed=7, delay=0)
+            before = {p: p.read_bytes() for p in output.glob("*/*.png")}
+            organize_real(source, output, seed=42)
+            rows = self.read_labels(output)
+            self.assertEqual(len(rows), 5)
+            self.assertEqual({r["split_seed"] for r in rows}, {""})
+            for row in rows:
+                self.assertEqual((output / row["split"] / row["filename"]).read_bytes(),
+                                 before[output / row["split"] / row["filename"]])
+            rows[0]["label"] = "Manual7"
+            with (output / "labels.csv").open("w", encoding="utf-8", newline="") as stream:
+                writer = csv.DictWriter(stream, fieldnames=COLUMNS)
+                writer.writeheader()
+                writer.writerows(rows)
+            organize_real(source, output, seed=99)
+            self.assertEqual(self.read_labels(output), rows)
+            self.assertEqual({p: p.read_bytes() for p in output.glob("*/*.png")}, before)
 
     def test_conflicts_fail_without_changing_data(self):
         with tempfile.TemporaryDirectory() as folder:

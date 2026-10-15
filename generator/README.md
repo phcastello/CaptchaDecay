@@ -52,7 +52,7 @@ Cada PNG fica em `train/` ou `validation/`. Não existe split sintético de test
 O arquivo `labels.csv` contém:
 
 ```csv
-filename,label,split,length,width,height,perturbation,num_lines,noise_level,font_ratio,image_bg_color,text_color,line_color,seed,index,render_seed,config_sha256,securimage_version
+filename,label,split,length,width,height,perturbation,num_lines,noise_level,font_ratio,image_bg_color,text_color,line_color,seed,index,render_seed,config_sha256,securimage_version,rng_scheme
 ```
 
 Filename é um contador de oito dígitos, independente do label. A sequência
@@ -60,6 +60,26 @@ continua a partir do maior índice registrado. Imagem e dimensões são validada
 antes da escrita exclusiva; o CSV só recebe a linha após a escrita da imagem.
 Linhas antigas são preservadas e cada linha nova é imediatamente descarregada
 para o arquivo. Um lock no diretório impede gerações simultâneas na mesma saída.
+
+O formato anterior é reconhecido exatamente pelo mesmo cabeçalho sem a coluna
+`rng_scheme`. Somente após validar o CSV e os arquivos, o gerador salva um backup
+integral `labels.csv.pre-rng-v2-<id>.bak` e substitui o CSV atomicamente por uma
+versão com a coluna adicional. Todos os campos/valores antigos são preservados
+e recebem `legacy-unknown`: o formato sozinho não comprova qual versão gerou
+essas amostras. As novas linhas recebem `xoshiro256starstar-sha256-v2`. Imagens
+existentes não são regeneradas. Cabeçalhos desconhecidos, linhas de formatos
+misturados ou datasets inconsistentes interrompem a operação para revisão.
+
+Um índice SHA-256 em memória reúne os bytes dos PNGs dos dois splits. Arquivos
+diferentes com conteúdo idêntico no dataset existente impedem novas adições.
+Após renderizar e validar cada PNG novo, seu hash é conferido antes de qualquer
+escrita da imagem/linha. Duplicatas interrompem com erro, identificando arquivos,
+splits e eventuais labels conflitantes, sem tentativas automáticas nem remoções;
+o progresso anterior permanece. O lote interrompido pode ter proporções
+incompletas. Labels repetidos com imagens diferentes são válidos. Não se usam
+label, filename ou `render_seed` como identidade do conteúdo. O hash não detecta
+semelhança visual nem necessariamente pixels iguais codificados diferentemente;
+não constitui garantia matemática contra qualquer colisão possível.
 
 Em erro, o processo sai com código 1 e preserva o progresso. Uma interrupção
 abrupta entre imagem e CSV pode deixar um PNG órfão, ou uma última linha CSV
@@ -72,9 +92,19 @@ o gerador não apaga arquivos nem inventa metadata de recuperação.
 
 ## Seed e limites de reprodução
 
-Labels e parâmetros usam um `Randomizer`/`Mt19937` separado por seed e índice,
-sem compartilhar o estado aleatório consumido pelo Securimage. Splits são
-embaralhados com outro engine e arredondados por lote. Com a mesma configuração,
+O esquema `xoshiro256starstar-sha256-v2` usa `Randomizer`/`Xoshiro256StarStar`,
+inicializado com os **32 bytes binários completos** de
+`SHA-256("captchadecay:rng-v2:<seed>:<contexto>")`, conforme a
+[documentação oficial do PHP](https://www.php.net/manual/en/random-engine-xoshiro256starstar.construct.php).
+O contexto `sample:<índice>` controla label e parâmetros independentemente do
+split e do diretório de saída; `splits:<início do lote>` controla a divisão.
+Esse esquema substitui a derivação antiga de 28 bits e **muda a sequência
+produzida pela mesma seed**, inclusive o embaralhamento dos splits.
+
+Cada amostra usa seu próprio estado, sem compartilhar a aleatoriedade global
+`mt_rand()` consumida pelo Securimage. Renderizar outras imagens não muda sua
+metadata. Splits são embaralhados com outro engine e arredondados por lote.
+Para o esquema novo, com a mesma configuração,
 seed, índice inicial e quantidade do lote, labels, parâmetros, metadata e splits
 são reproduzíveis. Lotes pequenos podem arredondar validation para zero.
 
@@ -102,3 +132,18 @@ por SHA-256 e escreve labels vazios. Reexecutar adiciona imagens ao índice sem
 mover splits existentes ou perder labels manuais. `source` e `split_seed` no
 CSV permitem auditar a migração. Os diretórios antigos são somente backup;
 use apenas `dataset/real` para adaptação e avaliação.
+
+`split_seed` registra a seed apenas quando o organizador decide o split nessa
+execução. Para arquivos que já estavam em `real/<split>` sem linha anterior no
+CSV (por exemplo, vindos do coletor), o split é conservado e `split_seed` fica
+vazio, indicando procedência desconhecida. Linhas já indexadas, incluindo labels,
+hashes, origens e seeds, são preservadas mesmo ao mudar `--seed`. Seeds históricas
+registradas pela versão anterior podem ser imprecisas nesse caso; não há
+reescrita em massa nem inferência da seed original sem evidência específica.
+
+Os testes incluem receitas sem renderização para os índices 3057 e 21576 com
+seed 42, isolamento de RNG, poucos PNGs com renderização injetada para deduplicação,
+migração de CSV e coleta simulada. A integração local gera 20 imagens, adiciona
+5 e compara metadata com outra saída limpa. Requer as dependências acima
+instaladas via `composer install`; não usa OCR nem acessa os Correios. Informe
+`PHP_BINARY` se o executável PHP não estiver no PATH.

@@ -57,7 +57,18 @@ php generator/generate.php --count 1000 --seed 42
 Cada execução adiciona a quantidade solicitada em `dataset/synthetic`, sem
 sobrescrever PNGs ou linhas anteriores do CSV. Nomes como `00000001.png` são
 independentes do label. O CSV contém label, split, dimensões, parâmetros visuais,
-seed, índice, seed de renderização, hash da configuração e versão do Securimage.
+seed, índice, seed de renderização, hash da configuração, versão do Securimage
+e `rng_scheme=xoshiro256starstar-sha256-v2`. O esquema novo usa SHA-256 binário
+completo para inicializar Xoshiro256StarStar; a mesma seed produz uma sequência
+diferente da implementação anterior. CSVs sintéticos antigos são validados e
+migrados com backup integral e substituição atômica, preservando os valores
+anteriores com `rng_scheme=legacy-unknown`, sem regenerar imagens.
+
+O gerador verifica SHA-256 dos bytes dos PNGs em train e validation conjuntamente,
+tanto ao abrir o dataset quanto antes de salvar cada imagem nova. Uma duplicata
+interrompe a execução com diagnóstico e preserva o progresso anterior. Labels
+repetidos são permitidos. Essa proteção trata de arquivos exatamente iguais;
+não detecta imagens quase iguais nem pixels iguais com codificações diferentes.
 
 Edite [generator/config.php](generator/config.php) para mudar charset,
 comprimento (inicialmente 4–6), resolução (215×80), faixas de distorção, linhas,
@@ -87,6 +98,11 @@ Novas execuções preservam labels preenchidos e os splits existentes. A seed
 controla apenas a divisão das imagens ainda não organizadas; alterar a seed
 não move imagens já organizadas. O CSV é substituído atomicamente após escrita
 completa, mantendo os rótulos existentes.
+
+Arquivos já presentes em `real/<split>` e ainda sem registro recebem
+`split_seed` vazio: a seed original é desconhecida. A seed atual só é registrada
+quando o organizador escolhe o split agora. Registros existentes são preservados;
+seeds históricas potencialmente incorretas não são reescritas sem evidência.
 
 ## Aquisição real auxiliar
 
