@@ -104,6 +104,88 @@ Arquivos já presentes em `real/<split>` e ainda sem registro recebem
 quando o organizador escolhe o split agora. Registros existentes são preservados;
 seeds históricas potencialmente incorretas não são reescritas sem evidência.
 
+## Preparação e rotulagem do dataset
+
+Requer Python 3.10+, Tkinter e Pillow. Tkinter costuma acompanhar o Python para
+Windows; no Linux, instale também o pacote `python3-tk` da distribuição.
+
+```powershell
+python -m pip install -r requirements.txt
+python labeling/labeler.py
+```
+
+O rotulador abre `real/train` e `real/validation`, com original e ampliação até 3×,
+foco automático e interpolação suave/nearest-neighbor. Não altera PNGs nem sugere
+labels. Aceita comprimentos/caracteres livres, preserva maiúsculas e espaços
+internos e remove apenas espaços nas extremidades ao confirmar.
+
+| Ação | Atalho |
+| --- | --- |
+| Salvar e avançar | Enter |
+| Salvar sem avançar | Ctrl+S |
+| Anterior / próxima | Ctrl+← / Ctrl+→ |
+| Pular sem salvar o texto digitado | Esc |
+
+Cada confirmação atualiza **somente o label selecionado** em
+`dataset/real/labels.csv`, usando temporário validado no mesmo diretório e
+substituição atômica, preservando a metadata. Um lock coordena gravações e as
+alterações externas são conferidas antes da substituição. Em conflito, use
+**Recarregar CSV** e reaplique sua edição. Não edite externamente durante uma
+gravação. Um `.labeling.lock` deixado por interrupção só deve ser removido depois
+de confirmar que nenhuma instância está gravando.
+
+Ao reabrir, o filtro **Pendentes** começa na primeira imagem ainda não analisada.
+Use **Todas** para editar labels antigos e **Revisão** para imagens duvidosas.
+**Marcar revisão** persiste split/nome/SHA-256 em `dataset/real/labeling_state.json`,
+sem salvar texto digitado nem inventar label. Um label anterior permanece até ser
+editado ou salvo vazio. Salvar confirma a revisão e remove a marca; label vazio
+significa não rotulada. Navegar, pular e recarregar descartam texto não confirmado.
+Ctrl+S mantém a seleção e, se necessário, muda para **Todas**.
+
+O teste fica isolado da inspeção/calibração e só pode ser rotulado explicitamente,
+independentemente de previsões de qualquer modelo:
+
+```powershell
+python labeling/labeler.py --split test --allow-test-labeling
+```
+
+Para escolher outros dados locais, use `--dataset caminho/real`; `--split train`
+restringe a sessão ao treino. A comparação aceita **somente reais de train**:
+
+```powershell
+php generator/generate.php --count 100 --seed 42 --output dataset/synthetic/pilot
+python inspection/compare.py --count 20 --seed 42 --synthetic-dir dataset/synthetic/pilot/train --output inspection/output/pilot-comparison.png
+```
+
+O piloto fica separado do dataset definitivo. O comparador aceita `--real-dir`,
+`--synthetic-dir`, `--count`, `--seed` e `--output`; defaults: `dataset/real/train`,
+`dataset/synthetic/train` e `inspection/output/comparison.png`. A seleção é
+reproduzível para entradas inalteradas, com escala comum e proporções preservadas.
+O número de pares é limitado pelo menor dataset. Saídas existentes são recusadas.
+O JSON ao lado do PNG registra resoluções e estatísticas de **todas as imagens
+das entradas**. Nos reais, `labeled` conta apenas labels confirmados; os preenchidos
+em revisão aparecem em `labeled_in_review` e não entram em comprimento/charset.
+`unlabeled_or_unknown` conta imagens sem label, incluindo a parcela marcada em
+`unlabeled_in_review`. Assim, os três primeiros grupos somam o total disponível;
+`unlabeled_in_review` é um subconjunto, não um grupo adicional. Sem arquivo de
+estado, nenhuma imagem está em revisão; estado inválido interrompe a comparação.
+As estatísticas sintéticas permanecem baseadas nos labels preenchidos. Sem
+label/CSV, comprimento e charset ficam desconhecidos. Contraste, ocupação e
+distorção exigem inspeção manual; não há OCR ou calibração automática.
+
+A CLI aceita somente `dataset/real/train` como entrada real e diretórios dentro
+de `dataset/synthetic` como entrada sintética, incluindo `train` e `pilot/train`.
+Caminhos canônicos são validados antes da leitura: reais e backups legados
+`dataset/{train,validation,test}` são recusados como sintéticos, inclusive por
+`..`, symlinks ou aliases que apontem para fora da raiz permitida.
+
+PNG e JSON são preparados e validados em temporários no diretório de saída,
+depois publicados com criação exclusiva. Falhas tratadas removem temporários e
+saídas ainda identificadas como pertencentes à execução, preservando arquivos
+anteriores ou de outra execução. O par não é uma transação indivisível: uma
+interrupção abrupta pode exigir recuperação manual antes de reutilizar a saída.
+Piloto, relatórios e estado auxiliar são locais e ignorados pelo Git.
+
 ## Aquisição real auxiliar
 
 `captcha_dataset.py` permanece disponível para aquisição limitada de amostras

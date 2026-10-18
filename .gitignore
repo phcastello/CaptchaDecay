@@ -15,3 +15,6 @@ __pycache__/
 /dataset/validation/*.png
 /dataset/test/*.png
 *.tmp
+/dataset/real/labeling_state.json
+/dataset/real/.labeling.lock
+/inspection/output/
