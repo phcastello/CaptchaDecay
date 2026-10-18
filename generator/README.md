@@ -20,24 +20,64 @@ Edite `config.php`, ou passe `--config arquivo.php`. O arquivo opcional deve
 retornar um array PHP com overrides das chaves existentes; ele é código local
 confiável, não um arquivo de dados remoto. Opções da CLI prevalecem sobre ele.
 
-| Configuração | Valor/faixa inicial | API Securimage |
+| Configuração | Valor/faixa calibrada inicial | API Securimage |
 | --- | --- | --- |
 | width / height | 215 / 80 | image_width / image_height |
-| min_length / max_length | 4 / 6, uniforme | texto via display_value |
-| charset | charset inicial do upstream, centralizado | texto via display_value |
-| perturbation | 0.65–1.0 | perturbation |
-| num_lines | 3–7 | num_lines |
-| noise_level | 1–4 | noise_level |
-| font_ratio | 0.35–0.45 | font_ratio |
+| min_length / max_length | 4 / 6; pesos 27 / 46 / 27 | texto via display_value |
+| charset | `abcdefghiklmnprstuvwyz23456789` | texto via display_value |
+| perturbation | 0.90–1.0 | perturbation |
+| num_lines | 5–8 | num_lines |
+| noise_level | 2–4 | noise_level |
+| font_ratio | 0.42–0.52 | font_ratio |
 | image_bg_color | branco / cinza muito claro | image_bg_color |
-| text_color / line_color | paletas de cinza | text_color / line_color |
+| text_color / line_color | texto: #606060/#707070/#808080; linhas: #606060/#808080 | text_color / line_color |
 
-As faixas são infraestrutura inicial de domain randomization, próximas aos
-defaults do gerador, não medições dos Correios. TODO: calibrar charset,
-distribuição de comprimento e faixas visuais após rotulagem de dados reais de
-adaptação/validação. Não é feita inferência automática desses parâmetros.
+Esta calibração inicial usa **somente 63 labels confirmados de `real/train`**:
+17 com comprimento 4, 29 com 5 e 17 com 6, além de inspeção visual manual de treino.
+O único `L` maiúsculo observado é ambíguo: foi excluído do charset sintético,
+sem alterar o label real. Maiúsculas, `0`, `1` e letras não observadas saem dos
+defaults; o charset poderá ser revisto com novas evidências de treino.
+
+As faixas mantêm domain randomization e são hipóteses visuais, não medições dos
+parâmetros dos Correios. A perturbação concentra-se no extremo alto já suportado
+(o upstream descreve 1.0 como muito alto); linhas mais numerosas/escuras e ruído
+reposicionado aumentam a interferência. A fonte maior aumenta ocupação e favorece
+sobreposição sob deformação; não há parâmetro novo de compressão/letter-spacing,
+redimensionamento do PNG ou alteração de fonte/vendor. Algumas amostras podem
+ficar mais carregadas que as reais. **Não se usou `real/validation` nem `real/test`.**
 O charset atual admite caracteres ASCII alfanuméricos únicos; alfabetos Unicode
 exigirão suporte explícito e fonte compatível em uma alteração futura.
+
+`length_distribution` é um mapa de **pesos inteiros relativos**, por exemplo:
+
+```php
+'min_length' => 4,
+'max_length' => 6,
+'length_distribution' => [4 => 27, 5 => 46, 6 => 27],
+```
+
+Cada amostra sorteia o comprimento com seu próprio RNG, com probabilidades
+27%/46%/27%; não se impõem quotas exatas por lote. Pesos devem ser inteiros entre
+0 e 1.000.000, com soma positiva e comprimentos dentro de min_length/max_length;
+peso zero desativa um comprimento. `null` seleciona o comportamento uniforme
+anterior. Ao sobrescrever os limites em um `--config`, forneça um mapa compatível
+ou `length_distribution => null`; a ferramenta recusa mapas inconsistentes.
+Ordem das chaves é normalizada; o mapa participa do `config_sha256`.
+
+O algoritmo RNG e o CSV permanecem iguais; mudar charset, pesos ou faixas muda
+a receita para a mesma seed em relação ao piloto anterior. Com configuração
+inalterada, seed e índice continuam reproduzindo label e parâmetros.
+
+Para inspecionar a calibração sem misturar os pilotos:
+
+```powershell
+php generator/generate.php --count 100 --seed 42 --output dataset/synthetic/pilot_v2
+python inspection/compare.py --count 20 --seed 42 --synthetic-dir dataset/synthetic/pilot_v2/train --output inspection/output/pilot-v2-comparison.png
+```
+
+Os artefatos locais incluem PNG, JSON e `inspection/output/pilot-v2-observations.md`.
+Use uma saída limpa: repetir o gerador em `pilot_v2` acrescenta imagens; não
+reexecute para substituir o lote. O piloto anterior permanece preservado.
 
 A API [oficial 4.0.2](https://github.com/dapphp/securimage/blob/4.0.2/securimage.php)
 oferece `display_value` para desenhar o label escolhido por nosso código. A

@@ -42,6 +42,23 @@ function validate_config(array $config): array
     if ($config['min_length'] > $config['max_length']) {
         throw new InvalidArgumentException('min_length não pode exceder max_length.');
     }
+    $distribution = $config['length_distribution'] ?? null;
+    if ($distribution !== null) {
+        if (!is_array($distribution) || !$distribution) {
+            throw new InvalidArgumentException('length_distribution deve ser null ou um mapa comprimento => peso inteiro.');
+        }
+        foreach ($distribution as $length => $weight) {
+            if (!is_int($length) || $length < $config['min_length'] || $length > $config['max_length']) {
+                throw new InvalidArgumentException('length_distribution contém comprimento fora de min_length/max_length.');
+            }
+            $distribution[$length] = checked_integer($weight, 'length_distribution: peso', 0, 1000000);
+        }
+        if (array_sum($distribution) === 0) {
+            throw new InvalidArgumentException('length_distribution deve ter pelo menos um peso positivo.');
+        }
+        ksort($distribution);
+    }
+    $config['length_distribution'] = $distribution;
     foreach (['train_ratio', 'validation_ratio'] as $name) {
         $config[$name] = checked_number($config[$name] ?? null, $name, 0, 1);
     }
@@ -127,11 +144,27 @@ function make_rng(int $seed, string $context): Randomizer
     return new Randomizer(new Xoshiro256StarStar($material));
 }
 
+function sample_length(array $config, Randomizer $rng): int
+{
+    $distribution = $config['length_distribution'] ?? null;
+    if ($distribution === null) {
+        return $rng->getInt($config['min_length'], $config['max_length']);
+    }
+    $ticket = $rng->getInt(1, array_sum($distribution));
+    foreach ($distribution as $length => $weight) {
+        $ticket -= $weight;
+        if ($ticket <= 0) {
+            return $length;
+        }
+    }
+    throw new LogicException('Distribuição de comprimentos não validada.');
+}
+
 function sample_metadata(array $config, int $index, string $split): array
 {
     // Separate engine: Securimage's mt_rand calls cannot change labels or metadata.
     $rng = make_rng($config['seed'], "sample:$index");
-    $length = $rng->getInt($config['min_length'], $config['max_length']);
+    $length = sample_length($config, $rng);
     $label = '';
     for ($i = 0; $i < $length; ++$i) {
         $label .= $config['charset'][$rng->getInt(0, strlen($config['charset']) - 1)];
