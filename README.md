@@ -162,11 +162,28 @@ O piloto fica separado do dataset definitivo. O comparador aceita `--real-dir`,
 `dataset/synthetic/train` e `inspection/output/comparison.png`. A seleção é
 reproduzível para entradas inalteradas, com escala comum e proporções preservadas.
 O número de pares é limitado pelo menor dataset. Saídas existentes são recusadas.
-O JSON ao lado do PNG registra resoluções e estatísticas dos labels preenchidos
-de **todas as imagens das entradas**; sem label/CSV, comprimento e charset ficam
-desconhecidos. Contraste, ocupação e distorção exigem inspeção manual; não há OCR
-ou calibração automática. Confira marcas de revisão antes de usar labels antigos.
-`real/validation` e `real/test` são recusados, inclusive por caminhos resolvidos.
+O JSON ao lado do PNG registra resoluções e estatísticas de **todas as imagens
+das entradas**. Nos reais, `labeled` conta apenas labels confirmados; os preenchidos
+em revisão aparecem em `labeled_in_review` e não entram em comprimento/charset.
+`unlabeled_or_unknown` conta imagens sem label, incluindo a parcela marcada em
+`unlabeled_in_review`. Assim, os três primeiros grupos somam o total disponível;
+`unlabeled_in_review` é um subconjunto, não um grupo adicional. Sem arquivo de
+estado, nenhuma imagem está em revisão; estado inválido interrompe a comparação.
+As estatísticas sintéticas permanecem baseadas nos labels preenchidos. Sem
+label/CSV, comprimento e charset ficam desconhecidos. Contraste, ocupação e
+distorção exigem inspeção manual; não há OCR ou calibração automática.
+
+A CLI aceita somente `dataset/real/train` como entrada real e diretórios dentro
+de `dataset/synthetic` como entrada sintética, incluindo `train` e `pilot/train`.
+Caminhos canônicos são validados antes da leitura: reais e backups legados
+`dataset/{train,validation,test}` são recusados como sintéticos, inclusive por
+`..`, symlinks ou aliases que apontem para fora da raiz permitida.
+
+PNG e JSON são preparados e validados em temporários no diretório de saída,
+depois publicados com criação exclusiva. Falhas tratadas removem temporários e
+saídas ainda identificadas como pertencentes à execução, preservando arquivos
+anteriores ou de outra execução. O par não é uma transação indivisível: uma
+interrupção abrupta pode exigir recuperação manual antes de reutilizar a saída.
 Piloto, relatórios e estado auxiliar são locais e ignorados pelo Git.
 
 ## Aquisição real auxiliar

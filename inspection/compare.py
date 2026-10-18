@@ -2,14 +2,40 @@
 
 import argparse
 import csv
+import hashlib
 import json
+import os
 import random
+import shutil
+import sys
+import tempfile
 from collections import Counter
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
+if __package__ in (None, ""):
+    sys.path.insert(0, str(ROOT))
+
+from labeling.labeler import LabelStore, parse_state, read_optional
+
+
+def allowed_directories(real_dir, synthetic_dir, real_root, synthetic_root):
+    """Validate both origins before enumerating or opening any input files."""
+    reject_evaluation_path(real_dir)
+    reject_evaluation_path(synthetic_dir)
+    real_root, synthetic_root = Path(real_root).resolve(), Path(synthetic_root).resolve()
+    real_dir, synthetic_dir = Path(real_dir).resolve(), Path(synthetic_dir).resolve()
+    if real_dir != real_root / "train":
+        raise ValueError("A entrada real deve ser o train da raiz real autorizada.")
+    forbidden = [real_root, ROOT / "dataset/real"]
+    for dataset_root in (real_root.parent, ROOT / "dataset"):
+        forbidden.extend(dataset_root / split for split in ("train", "validation", "test"))
+    if (not synthetic_dir.is_relative_to(synthetic_root)
+            or any(synthetic_dir.is_relative_to(path.resolve()) for path in forbidden)):
+        raise ValueError("A entrada sintética deve pertencer à raiz sintética autorizada; reais e backups são proibidos.")
+    return real_dir, synthetic_dir
 
 
 def reject_evaluation_path(path):
@@ -44,11 +70,13 @@ def select_samples(paths, count, seed, domain):
     return random.Random(f"captchadecay:comparison:{seed}:{domain}").sample(sorted(paths), min(count, len(paths)))
 
 
-def labels_for(directory, paths):
+def labels_for(directory, paths, *, allowed_root=None):
     csv_path = directory.parent / "labels.csv"
     reject_evaluation_path(csv_path)
     if not csv_path.exists():
         return {}, None
+    if allowed_root is not None and not csv_path.resolve().is_relative_to(allowed_root):
+        raise ValueError(f"CSV fora da raiz autorizada: {csv_path}")
     labels = {}
     names = {p.name for p in paths}
     with csv_path.open(encoding="utf-8", newline="") as stream:
@@ -66,9 +94,25 @@ def labels_for(directory, paths):
     return labels, str(csv_path)
 
 
-def dataset_stats(directory, paths, sampled):
-    labels, csv_path = labels_for(directory, paths)
-    known = [value for value in labels.values() if value != ""]
+def dataset_stats(directory, paths, sampled, *, real=False, allowed_root=None):
+    labels, csv_path = labels_for(directory, paths, allowed_root=allowed_root)
+    reviewing = set()
+    if real:
+        state_path = directory.parent / "labeling_state.json"
+        if allowed_root is not None and not state_path.resolve().is_relative_to(allowed_root):
+            raise ValueError(f"Estado fora da raiz autorizada: {state_path}")
+        try:
+            review = parse_state(read_optional(state_path))["review"]
+        except ValueError as error:
+            raise ValueError(f"labeling_state.json inválido: {error}") from error
+        if review:
+            for path in paths:
+                identity = LabelStore.identity({"split": directory.name, "filename": path.name,
+                                               "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
+                if identity in review:
+                    reviewing.add(path.name)
+    filled = {name: value for name, value in labels.items() if value != ""}
+    known = [value for name, value in filled.items() if name not in reviewing]
     resolutions = Counter()
     for path in paths:
         with Image.open(path) as image:
@@ -76,29 +120,79 @@ def dataset_stats(directory, paths, sampled):
                 raise ValueError(f"Arquivo não é PNG: {path}")
             image.verify()
             resolutions[f"{image.width}x{image.height}"] += 1
-    return {
+    stats = {
         "directory": str(directory), "available": len(paths), "sampled": len(sampled),
         "selected_files": [p.name for p in sampled], "resolutions": dict(sorted(resolutions.items())),
-        "labels_csv": csv_path, "labeled": len(known), "unlabeled_or_unknown": len(paths) - len(known),
+        "labels_csv": csv_path, "labeled": len(known), "unlabeled_or_unknown": len(paths) - len(filled),
         "label_lengths": dict(sorted(Counter(map(len, known)).items())),
         "characters": "".join(sorted(set("".join(known)))),
     }
+    if real:
+        stats["labeled_in_review"] = len(reviewing & filled.keys())
+        # A subset of unlabeled_or_unknown, not another disjoint category.
+        stats["unlabeled_in_review"] = len(reviewing - filled.keys())
+    return stats
 
 
 def fit_size(size, scale):
     return tuple(max(1, round(length * scale)) for length in size)
 
 
+def remove_owned(files):
+    for path, identity in reversed(files):
+        try:
+            if os.path.samestat(path.lstat(), identity):
+                path.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def save_comparison(canvas, report, output, report_path):
+    """Stage and validate the pair; roll back only files created by this call."""
+    temporary, created = [], []
+    try:
+        with tempfile.NamedTemporaryFile(dir=output.parent, prefix=".comparison-", suffix=".tmp",
+                                         delete=False) as stream:
+            png_temp = Path(stream.name)
+            temporary.append((png_temp, os.fstat(stream.fileno())))
+            canvas.save(stream, format="PNG")
+            stream.flush()
+            os.fsync(stream.fileno())
+        with Image.open(png_temp) as image:
+            image.verify()
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=output.parent,
+                                         prefix=".comparison-", suffix=".tmp", delete=False) as stream:
+            json_temp = Path(stream.name)
+            temporary.append((json_temp, os.fstat(stream.fileno())))
+            json.dump(report, stream, ensure_ascii=False, indent=2)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        json.loads(json_temp.read_text(encoding="utf-8"))
+        # Exclusive creation preserves outputs from other runs, even after preflight.
+        # Publishing two files is not an indivisible transaction.
+        for source, target in ((png_temp, output), (json_temp, report_path)):
+            with target.open("xb") as destination:
+                created.append((target, os.fstat(destination.fileno())))
+                with source.open("rb") as stream:
+                    shutil.copyfileobj(stream, destination)
+                destination.flush()
+                os.fsync(destination.fileno())
+    except BaseException:
+        remove_owned(created)
+        raise
+    finally:
+        remove_owned(temporary)
+
+
 def compare(real_dir=ROOT / "dataset/real/train", synthetic_dir=ROOT / "dataset/synthetic/train",
-            *, count=20, seed=42, output=ROOT / "inspection/output/comparison.png"):
+            *, count=20, seed=42, output=ROOT / "inspection/output/comparison.png",
+            real_root=ROOT / "dataset/real", synthetic_root=ROOT / "dataset/synthetic"):
     if isinstance(count, bool) or not isinstance(count, int) or count < 1:
         raise ValueError("count deve ser inteiro positivo.")
     if isinstance(seed, bool) or not isinstance(seed, int):
         raise ValueError("seed deve ser inteiro.")
-    # Validate lexical paths as well as resolved paths, including directory aliases.
-    reject_evaluation_path(real_dir)
-    reject_evaluation_path(synthetic_dir)
-    real_dir, synthetic_dir = Path(real_dir).resolve(), Path(synthetic_dir).resolve()
+    real_dir, synthetic_dir = allowed_directories(real_dir, synthetic_dir, real_root, synthetic_root)
     real_paths = image_paths(real_dir, real=True)
     synthetic_paths = image_paths(synthetic_dir)
     paired_count = min(count, len(real_paths), len(synthetic_paths))
@@ -114,8 +208,10 @@ def compare(real_dir=ROOT / "dataset/real/train", synthetic_dir=ROOT / "dataset/
            for directory in (real_dir, synthetic_dir, ROOT / "dataset/real")):
         raise ValueError("Grave a comparação fora dos diretórios de imagens de entrada/dataset real.")
     reject_evaluation_path(output)
-    stats = {"real_train": dataset_stats(real_dir, real_paths, real_sample),
-             "synthetic": dataset_stats(synthetic_dir, synthetic_paths, synthetic_sample)}
+    stats = {"real_train": dataset_stats(real_dir, real_paths, real_sample, real=True,
+                                        allowed_root=Path(real_root).resolve()),
+             "synthetic": dataset_stats(synthetic_dir, synthetic_paths, synthetic_sample,
+                                        allowed_root=Path(synthetic_root).resolve())}
     images = []
     for real, synthetic in zip(real_sample, synthetic_sample):
         pair = []
@@ -156,19 +252,14 @@ def compare(real_dir=ROOT / "dataset/real/train", synthetic_dir=ROOT / "dataset/
         "notes": ["As estatísticas abrangem todos os PNGs disponíveis nas entradas, não só a amostra.",
                   "Comprimentos e caracteres vêm exclusivamente de labels conhecidos do CSV; não há OCR.",
                   "Nenhuma imagem real de validation/test participa da comparação.",
-                  "Labels marcados para revisão continuam no CSV; confira o estado auxiliar antes de usá-los.",
+                  "Labels reais em revisão não contribuem para labeled, label_lengths ou characters.",
                   "Não há estimativa de parâmetros de distorção nem calibração automática."],
         "manual_checklist": {name: None for name in [
             "apparent_character_size", "horizontal_vertical_occupancy", "spacing", "character_count_of_unlabeled_images",
             "colors", "contrast", "noise", "interference_lines", "distortion_intensity"]},
     }
     output.parent.mkdir(parents=True, exist_ok=True)
-    # Exclusive creation also prevents an accidental overwrite in a concurrent run.
-    with output.open("xb") as stream:
-        canvas.save(stream, format="PNG")
-    with report_path.open("x", encoding="utf-8") as stream:
-        json.dump(report, stream, ensure_ascii=False, indent=2)
-        stream.write("\n")
+    save_comparison(canvas, report, output, report_path)
     return report
 
 
