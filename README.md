@@ -71,11 +71,15 @@ repetidos são permitidos. Essa proteção trata de arquivos exatamente iguais;
 não detecta imagens quase iguais nem pixels iguais com codificações diferentes.
 
 Edite [generator/config.php](generator/config.php) para mudar charset,
-comprimento (inicialmente 4–6), resolução (215×80), faixas de distorção, linhas,
-ruído, tamanho relativo da fonte e paletas. Esses valores iniciais **não são
-estimativas dos parâmetros dos Correios**; devem ser calibrados após rotulagem
-das amostras reais. Consulte [generator/README.md](generator/README.md) para
-opções, reprodução e tratamento de interrupções.
+comprimentos, resolução (215×80), faixas de distorção, linhas, ruído, fonte e
+paletas. A calibração inicial usa somente os 63 labels de `real/train` e inspeção
+manual: charset `abcdefghiklmnprstuvwyz23456789` e pesos de comprimento
+4/5/6 = 27/46/27. O único `L` observado foi tratado como ambíguo, sem editar o
+label real; charset e faixas são revisáveis com novas evidências de treino.
+As novas faixas aumentam perturbação, ocupação e interferência, mantendo a
+randomização. **Não são parâmetros medidos dos Correios**; `real/validation` e
+`real/test` não participam da calibração. Consulte [generator/README.md](generator/README.md)
+para pesos configuráveis, reprodução e o piloto separado `dataset/synthetic/pilot_v2`.
 
 ## Organizar e rotular dados reais
 

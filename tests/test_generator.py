@@ -48,6 +48,11 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(defaults["count"], 1000)
         self.assertEqual(defaults["seed"], 42)
         self.assertEqual(defaults["train_ratio"], 0.9)
+        self.assertEqual(defaults["charset"], "abcdefghiklmnprstuvwyz23456789")
+        self.assertEqual(defaults["charset"], defaults["charset"].lower())
+        self.assertNotIn("0", defaults["charset"])
+        self.assertNotIn("1", defaults["charset"])
+        self.assertEqual(defaults["length_distribution"], {"4": 27, "5": 46, "6": 27})
         config = self.php_json(code, "--count=20", "--seed", 7, "--output", "custom",
                                "--train-ratio", 0.75, "--validation-ratio=0.25")
         self.assertEqual((config["count"], config["seed"], config["output"]), (20, 7, "custom"))
@@ -118,13 +123,13 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(recipe(a), recipe(other))
         self.assertEqual(a["config_sha256"], other["config_sha256"])
         self.assertEqual(a["rng_scheme"], RNG_SCHEME)
-        # Fixed v2 recipes also tie sample generation to the full-digest engine contract.
+        # Calibrated default recipes also tie generation to the full-digest v2 engine contract.
         self.assertEqual(tuple(a[key] for key in RECIPE_FIELDS),
-                         ("9Ume7", 5, 215, 80, 0.67688, 4, 3, 0.38905,
-                          "#ffffff", "#808080", "#909090", 1558130727))
+                         ("p6a2i7", 6, 215, 80, 0.95753, 7, 4, 0.44851,
+                          "#f6f6f6", "#808080", "#808080", 407070361))
         self.assertEqual(tuple(b[key] for key in RECIPE_FIELDS),
-                         ("xit1", 4, 215, 80, 0.700995, 7, 4, 0.44288,
-                          "#f6f6f6", "#606060", "#707070", 1141260154))
+                         ("kis8", 4, 215, 80, 0.91457, 7, 2, 0.51288,
+                          "#f6f6f6", "#606060", "#606060", 1141260154))
 
     def test_rng_engine_uses_all_32_binary_digest_bytes(self):
         for context in ("sample:3057", "sample:21576", "splits:1"):
@@ -159,7 +164,13 @@ class GeneratorTests(unittest.TestCase):
                  {"charset": ""}, {"charset": "AAB"}, {"charset": "á"},
                  {"perturbation": [0.8, 0.2]}, {"num_lines": [-1, 5]},
                  {"noise_level": [0, 11]}, {"font_ratio": [0.1, 1.5]},
-                 {"text_color": ["bad"]}, {"line_color": []}, {"unknown_property": 1})
+                 {"text_color": ["bad"]}, {"line_color": []}, {"unknown_property": 1},
+                 {"length_distribution": []}, {"length_distribution": "uniform"},
+                 {"length_distribution": {4: 0, 5: 0, 6: 0}},
+                 {"length_distribution": {3: 1}}, {"length_distribution": {7: 1}},
+                 {"length_distribution": {4: -1, 5: 2}},
+                 {"length_distribution": {4: 0.27, 5: 0.46, 6: 0.27}},
+                 {"length_distribution": {4: True}}, {"length_distribution": {4: 1000001}})
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "config.php"
             for config in cases:
@@ -175,13 +186,57 @@ class GeneratorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "config.php"
             path.write_text("<?php return ['charset' => 'AB2', 'min_length' => 2, "
-                            "'max_length' => 3, 'seed' => 7, 'count' => 5];", encoding="utf-8")
+                            "'max_length' => 3, 'length_distribution' => null, 'seed' => 7, 'count' => 5];", encoding="utf-8")
             config = self.php_json("echo json_encode(parse_options(array_slice($argv, 2)));",
                                    "--config", path, "--count", 10)
             self.assertEqual(config["charset"], "AB2")
             self.assertEqual(config["count"], 10)
             self.assertEqual(config["seed"], 7)
             self.assertEqual((config["min_length"], config["max_length"]), (2, 3))
+            self.assertIsNone(config["length_distribution"])
+
+    def test_weighted_default_length_distribution_favors_five_characters(self):
+        counts = self.php_json("""
+            $c = parse_options([]); $counts = [4 => 0, 5 => 0, 6 => 0];
+            for ($i = 1; $i <= 10000; ++$i) {
+                ++$counts[sample_metadata($c, $i, 'train')['length']];
+            }
+            echo json_encode($counts);
+        """)
+        self.assertEqual(sum(counts.values()), 10000)
+        self.assertGreater(counts["5"], counts["4"])
+        self.assertGreater(counts["5"], counts["6"])
+        for length, expected in (("4", 0.27), ("5", 0.46), ("6", 0.27)):
+            self.assertAlmostEqual(counts[length] / 10000, expected, delta=0.02)
+
+    def test_length_distribution_is_configurable_and_recorded_in_config_hash(self):
+        result = self.php_json("""
+            $c = parse_options([]); $original = sample_metadata($c, 1, 'train');
+            $c['min_length'] = 2; $c['max_length'] = 3;
+            $c['length_distribution'] = [2 => 0, 3 => 10]; $c = validate_config($c);
+            $samples = [];
+            for ($i = 1; $i <= 100; ++$i) { $samples[] = sample_metadata($c, $i, 'train'); }
+            echo json_encode([$original, $samples, sample_metadata($c, 1, 'train')]);
+        """)
+        original, samples, repeated = result
+        self.assertEqual({sample["length"] for sample in samples}, {3})
+        self.assertTrue(all(len(sample["label"]) == 3 for sample in samples))
+        self.assertEqual(samples[0], repeated)
+        self.assertNotEqual(original["config_sha256"], samples[0]["config_sha256"])
+
+    def test_null_distribution_keeps_legacy_uniform_selection_and_override_ranges(self):
+        result = self.php_json("""
+            $c = parse_options([]); $c['length_distribution'] = null;
+            $c['min_length'] = 2; $c['max_length'] = 3; $c = validate_config($c);
+            $actual = []; $expected = [];
+            for ($i = 1; $i <= 200; ++$i) {
+                $actual[] = sample_metadata($c, $i, 'train')['length'];
+                $expected[] = make_rng($c['seed'], "sample:$i")->getInt(2, 3);
+            }
+            echo json_encode([$actual, $expected]);
+        """)
+        self.assertEqual(result[0], result[1])
+        self.assertEqual(set(result[0]), {2, 3})
 
     def assert_png(self, path):
         data = path.read_bytes()
@@ -272,7 +327,10 @@ class GeneratorTests(unittest.TestCase):
         return self.php_json("""
             $c = parse_options(['--output', $argv[2], '--count', $argv[3],
                 '--train-ratio', $argv[4], '--validation-ratio', $argv[5]]);
-            if ($argv[7] === 'yes') { $c['charset'] = 'A'; $c['min_length'] = $c['max_length'] = 4; }
+            if ($argv[7] === 'yes') {
+                $c['charset'] = 'A'; $c['min_length'] = $c['max_length'] = 4;
+                $c['length_distribution'] = null;
+            }
             $images = json_decode($argv[6], true); $n = 0;
             try {
                 $saved = generate_dataset($c, function ($sample) use (&$n, $images) {
