@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "description": "Controlled synthetic CRNN experiments; this file does not execute training.",
+  "A": {
+    "status": "completed",
+    "run_dir": "outputs/runs/crnn-v2-baseline",
+    "dataset_snapshot": "outputs/experiments/dataset-expansion/baseline-dataset",
+    "train_images": 2700,
+    "validation_images": 300,
+    "epochs": 100,
+    "batch_size": 16,
+    "learning_rate": 0.001,
+    "updates": 16900,
+    "best_epoch": 95,
+    "best_exact_match": 0.6166666666666667,
+    "best_cer": 0.10617120106171202
+  },
+  "B": {
+    "status": "prepared_manual_only",
+    "train_images": 9000,
+    "validation_images": 300,
+    "updates": 16890,
+    "argv": [
+      "--data", "dataset/synthetic/v2_9k_train",
+      "--device", "cpu",
+      "--epochs", "30",
+      "--batch-size", "16",
+      "--learning-rate", "0.001",
+      "--seed", "42",
+      "--scheduler", "none",
+      "--run-dir", "outputs/runs/crnn-v2-9k-fixed"
+    ]
+  },
+  "C": {
+    "status": "prepared_manual_only",
+    "train_images": 9000,
+    "validation_images": 300,
+    "updates": 16890,
+    "argv": [
+      "--data", "dataset/synthetic/v2_9k_train",
+      "--device", "cpu",
+      "--epochs", "30",
+      "--batch-size", "16",
+      "--learning-rate", "0.001",
+      "--seed", "42",
+      "--scheduler", "plateau",
+      "--plateau-start-epoch", "10",
+      "--plateau-patience", "8",
+      "--plateau-factor", "0.5",
+      "--plateau-min-delta", "0.002",
+      "--plateau-cooldown", "2",
+      "--plateau-min-lr", "0.00001",
+      "--run-dir", "outputs/runs/crnn-v2-9k-plateau"
+    ]
+  },
+  "protected_paths": [
+    "dataset/synthetic/v2_main",
+    "outputs/runs/crnn-v2-baseline"
+  ],
+  "training_executed_during_preparation": false
+}

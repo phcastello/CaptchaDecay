@@ -1,0 +1,2616 @@
+{
+  "schema_version": 1,
+  "config": {
+    "device": "both",
+    "batch_size": 8,
+    "iterations": 5,
+    "warmup": 2,
+    "repeats": 3,
+    "seed": 42,
+    "threads": 6,
+    "device_index": 0,
+    "output": "benchmarks\\directml-results.json"
+  },
+  "environment": {
+    "timestamp_utc": "2026-10-18T18:35:49.379715+00:00",
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "executable": "C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Scripts\\python.exe",
+    "prefix": "C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml",
+    "base_prefix": "C:\\Users\\phcastello\\AppData\\Local\\Programs\\Python\\Python312",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "packages": {
+      "torch": "2.4.1",
+      "torch-directml": "0.2.5.dev240914",
+      "torchvision": "0.19.1",
+      "numpy": "2.5.4",
+      "pillow": "13.0.0"
+    },
+    "torch_runtime": "2.4.1+cpu",
+    "cuda_build": null,
+    "threads": 6,
+    "interop_threads": 6,
+    "windows": {
+      "OS": {
+        "Caption": "Microsoft Windows 11 Pro",
+        "Version": "10.0.26300",
+        "BuildNumber": "26300"
+      },
+      "CPU": {
+        "Name": "AMD Ryzen 5 5600X 6-Core Processor             ",
+        "NumberOfCores": 6,
+        "NumberOfLogicalProcessors": 12
+      },
+      "RAM": 34255376384,
+      "GPU": [
+        {
+          "Name": "Parsec Virtual Display Adapter",
+          "DriverVersion": "0.45.0.0",
+          "DriverDate": "/Date(1706140800000)/"
+        },
+        {
+          "Name": "Microsoft Remote Display Adapter",
+          "DriverVersion": "10.0.26100.9711",
+          "DriverDate": "/Date(1150848000000)/"
+        },
+        {
+          "Name": "AMD Radeon RX 6700 XT",
+          "DriverVersion": "32.0.21045.5002",
+          "DriverDate": "/Date(1786924800000)/"
+        }
+      ]
+    },
+    "directml_devices": [
+      "AMD Radeon RX 6700 XT"
+    ]
+  },
+  "backends": {
+    "cpu": {
+      "device": "cpu",
+      "name": "CPU",
+      "probes": {
+        "conv2d": {
+          "status": "passed",
+          "device": "cpu",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "passed",
+            "loss": "passed",
+            "backward": "passed",
+            "gradients": "passed",
+            "optimizer": "passed",
+            "parameters": "passed"
+          },
+          "iterations_completed": 5,
+          "losses": [
+            0.38628214597702026,
+            0.38281378149986267,
+            0.3793659210205078,
+            0.37593886256217957,
+            0.37253305315971375
+          ],
+          "operation_forward_stage": "forward",
+          "parameter_devices": [
+            "cpu"
+          ],
+          "input_device": "cpu",
+          "output_shape": [
+            8,
+            8,
+            80,
+            215
+          ],
+          "output_device": "cpu",
+          "gradients": {
+            "input": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 2.2521537175634876e-05
+            },
+            "weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.08147774636745453
+            },
+            "bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.08170408010482788
+            }
+          },
+          "changed_parameters": [
+            "weight",
+            "bias"
+          ],
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {},
+            "blocked_operator": null
+          }
+        },
+        "batchnorm2d": {
+          "status": "passed",
+          "device": "cpu",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "passed",
+            "loss": "passed",
+            "backward": "passed",
+            "gradients": "passed",
+            "optimizer": "passed",
+            "parameters": "passed"
+          },
+          "iterations_completed": 5,
+          "losses": [
+            0.9999900460243225,
+            0.9979910850524902,
+            0.995994508266449,
+            0.9939993023872375,
+            0.992006778717041
+          ],
+          "operation_forward_stage": "forward",
+          "parameter_devices": [
+            "cpu"
+          ],
+          "input_device": "cpu",
+          "output_shape": [
+            8,
+            8,
+            40,
+            107
+          ],
+          "output_device": "cpu",
+          "gradients": {
+            "input": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 3.32275262859838e-10
+            },
+            "weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.24899762868881226
+            },
+            "bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.00012147490633651614
+            }
+          },
+          "changed_parameters": [
+            "weight",
+            "bias"
+          ],
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {},
+            "blocked_operator": null
+          }
+        },
+        "relu": {
+          "status": "passed",
+          "device": "cpu",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "passed",
+            "loss": "passed",
+            "backward": "passed",
+            "gradients": "passed",
+            "optimizer": "not_applicable"
+          },
+          "iterations_completed": 5,
+          "losses": [
+            0.5021982192993164,
+            0.5021982192993164,
+            0.5021982192993164,
+            0.5021982192993164,
+            0.5021982192993164
+          ],
+          "operation_forward_stage": "forward",
+          "parameter_devices": [],
+          "input_device": "cpu",
+          "output_shape": [
+            8,
+            8,
+            40,
+            107
+          ],
+          "output_device": "cpu",
+          "gradients": {
+            "input": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 3.379875488462858e-05
+            }
+          },
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {},
+            "blocked_operator": null
+          }
+        },
+        "maxpool2d": {
+          "status": "passed",
+          "device": "cpu",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "passed",
+            "loss": "passed",
+            "backward": "passed",
+            "gradients": "passed",
+            "optimizer": "not_applicable"
+          },
+          "iterations_completed": 5,
+          "losses": [
+            1.5582934617996216,
+            1.5582934617996216,
+            1.5582934617996216,
+            1.5582934617996216,
+            1.5582934617996216
+          ],
+          "operation_forward_stage": "forward",
+          "parameter_devices": [],
+          "input_device": "cpu",
+          "output_shape": [
+            8,
+            8,
+            20,
+            53
+          ],
+          "output_device": "cpu",
+          "gradients": {
+            "input": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.00013647045125253499
+            }
+          },
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {},
+            "blocked_operator": null
+          }
+        },
+        "cnn": {
+          "status": "passed",
+          "device": "cpu",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "passed",
+            "loss": "passed",
+            "backward": "passed",
+            "gradients": "passed",
+            "optimizer": "passed",
+            "parameters": "passed"
+          },
+          "iterations_completed": 5,
+          "losses": [
+            1.4927692413330078,
+            1.4767441749572754,
+            1.4606765508651733,
+            1.4446004629135132,
+            1.4285410642623901
+          ],
+          "operation_forward_stage": "forward",
+          "parameter_devices": [
+            "cpu"
+          ],
+          "input_device": "cpu",
+          "output_shape": [
+            8,
+            16,
+            20,
+            53
+          ],
+          "output_device": "cpu",
+          "gradients": {
+            "input": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.0001255438692169264
+            },
+            "0.weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.054812490940093994
+            },
+            "0.bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 1.3271346688270569e-08
+            },
+            "1.weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.026916928589344025
+            },
+            "1.bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.005359035450965166
+            },
+            "4.weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.03163973242044449
+            },
+            "4.bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 4.5038177631795406e-08
+            },
+            "5.weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.19450496137142181
+            },
+            "5.bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.12861905992031097
+            }
+          },
+          "changed_parameters": [
+            "0.weight",
+            "0.bias",
+            "1.weight",
+            "1.bias",
+            "4.weight",
+            "4.bias",
+            "5.weight",
+            "5.bias"
+          ],
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {},
+            "blocked_operator": null
+          }
+        },
+        "bilstm": {
+          "status": "passed",
+          "device": "cpu",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "passed",
+            "loss": "passed",
+            "backward": "passed",
+            "gradients": "passed",
+            "optimizer": "passed",
+            "parameters": "passed"
+          },
+          "iterations_completed": 5,
+          "losses": [
+            0.0028403152246028185,
+            0.0021182026248425245,
+            0.0016186217544600368,
+            0.0012588410172611475,
+            0.0009937933646142483
+          ],
+          "operation_forward_stage": "forward",
+          "parameter_devices": [
+            "cpu"
+          ],
+          "input_device": "cpu",
+          "output_shape": [
+            24,
+            8,
+            256
+          ],
+          "output_device": "cpu",
+          "gradients": {
+            "input": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 6.673272991974954e-07
+            },
+            "weight_ih_l0": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 1.2375220649119001e-05
+            },
+            "weight_hh_l0": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 4.121725851291558e-06
+            },
+            "bias_ih_l0": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 4.223951691528782e-05
+            },
+            "bias_hh_l0": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 4.223951691528782e-05
+            },
+            "weight_ih_l0_reverse": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 1.284777681576088e-05
+            },
+            "weight_hh_l0_reverse": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 4.639631242753239e-06
+            },
+            "bias_ih_l0_reverse": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 4.7736208216520026e-05
+            },
+            "bias_hh_l0_reverse": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 4.7736208216520026e-05
+            },
+            "weight_ih_l1": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 1.6110636352095753e-05
+            },
+            "weight_hh_l1": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 7.686132448725402e-06
+            },
+            "bias_ih_l1": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.00014482771803159267
+            },
+            "bias_hh_l1": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.00014482771803159267
+            },
+            "weight_ih_l1_reverse": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 1.675725434324704e-05
+            },
+            "weight_hh_l1_reverse": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 9.71750523603987e-06
+            },
+            "bias_ih_l1_reverse": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.000169637831277214
+            },
+            "bias_hh_l1_reverse": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.000169637831277214
+            }
+          },
+          "changed_parameters": [
+            "weight_ih_l0",
+            "weight_hh_l0",
+            "bias_ih_l0",
+            "bias_hh_l0",
+            "weight_ih_l0_reverse",
+            "weight_hh_l0_reverse",
+            "bias_ih_l0_reverse",
+            "bias_hh_l0_reverse",
+            "weight_ih_l1",
+            "weight_hh_l1",
+            "bias_ih_l1",
+            "bias_hh_l1",
+            "weight_ih_l1_reverse",
+            "weight_hh_l1_reverse",
+            "bias_ih_l1_reverse",
+            "bias_hh_l1_reverse"
+          ],
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {},
+            "blocked_operator": null
+          }
+        },
+        "linear": {
+          "status": "passed",
+          "device": "cpu",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "passed",
+            "loss": "passed",
+            "backward": "passed",
+            "gradients": "passed",
+            "optimizer": "passed",
+            "parameters": "passed"
+          },
+          "iterations_completed": 5,
+          "losses": [
+            0.32736289501190186,
+            0.3053557276725769,
+            0.2844886779785156,
+            0.26475533843040466,
+            0.24613933265209198
+          ],
+          "operation_forward_stage": "forward",
+          "parameter_devices": [
+            "cpu"
+          ],
+          "input_device": "cpu",
+          "output_shape": [
+            24,
+            8,
+            17
+          ],
+          "output_device": "cpu",
+          "gradients": {
+            "input": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.00019861424516420811
+            },
+            "weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.018776588141918182
+            },
+            "bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.010476013645529747
+            }
+          },
+          "changed_parameters": [
+            "weight",
+            "bias"
+          ],
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {},
+            "blocked_operator": null
+          }
+        },
+        "ctc": {
+          "status": "passed",
+          "device": "cpu",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "passed",
+            "loss": "passed",
+            "backward": "passed",
+            "gradients": "passed",
+            "optimizer": "not_applicable"
+          },
+          "iterations_completed": 5,
+          "losses": [
+            11.181955337524414,
+            11.181955337524414,
+            11.181955337524414,
+            11.181955337524414,
+            11.181955337524414
+          ],
+          "operation_forward_stage": "loss",
+          "parameter_devices": [],
+          "input_device": "cpu",
+          "output_shape": [
+            24,
+            8,
+            17
+          ],
+          "output_device": "cpu",
+          "gradients": {
+            "input": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.023786770179867744
+            }
+          },
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {},
+            "blocked_operator": null
+          }
+        },
+        "integrated": {
+          "status": "passed",
+          "device": "cpu",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "passed",
+            "loss": "passed",
+            "backward": "passed",
+            "gradients": "passed",
+            "optimizer": "passed",
+            "parameters": "passed"
+          },
+          "iterations_completed": 5,
+          "losses": [
+            25.1684513092041,
+            22.622209548950195,
+            18.37772560119629,
+            12.658276557922363,
+            7.195303440093994
+          ],
+          "operation_forward_stage": "forward",
+          "parameter_devices": [
+            "cpu"
+          ],
+          "input_device": "cpu",
+          "output_shape": [
+            53,
+            8,
+            17
+          ],
+          "output_device": "cpu",
+          "gradients": {
+            "input": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.00023135302762966603
+            },
+            "cnn.0.weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.07327926158905029
+            },
+            "cnn.0.bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 1.739244908094406e-07
+            },
+            "cnn.1.weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.030916674062609673
+            },
+            "cnn.1.bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.01005710382014513
+            },
+            "cnn.4.weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.053290992975234985
+            },
+            "cnn.4.bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 6.146728992462158e-08
+            },
+            "cnn.5.weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.1773727387189865
+            },
+            "cnn.5.bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.16937021911144257
+            },
+            "projection.weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.16715741157531738
+            },
+            "projection.bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.05740133300423622
+            },
+            "rnn.weight_ih_l0": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.12270453572273254
+            },
+            "rnn.weight_hh_l0": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.04152022674679756
+            },
+            "rnn.bias_ih_l0": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.04841768741607666
+            },
+            "rnn.bias_hh_l0": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.04841768741607666
+            },
+            "rnn.weight_ih_l0_reverse": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.11147689819335938
+            },
+            "rnn.weight_hh_l0_reverse": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.03841376677155495
+            },
+            "rnn.bias_ih_l0_reverse": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.04438648372888565
+            },
+            "rnn.bias_hh_l0_reverse": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.04438648372888565
+            },
+            "rnn.weight_ih_l1": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.18651103973388672
+            },
+            "rnn.weight_hh_l1": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.13855639100074768
+            },
+            "rnn.bias_ih_l1": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.21136416494846344
+            },
+            "rnn.bias_hh_l1": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.21136416494846344
+            },
+            "rnn.weight_ih_l1_reverse": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.20683379471302032
+            },
+            "rnn.weight_hh_l1_reverse": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.16485288739204407
+            },
+            "rnn.bias_ih_l1_reverse": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.23379269242286682
+            },
+            "rnn.bias_hh_l1_reverse": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.23379269242286682
+            },
+            "head.weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 3.142197847366333
+            },
+            "head.bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 4.410305023193359
+            }
+          },
+          "changed_parameters": [
+            "cnn.0.weight",
+            "cnn.0.bias",
+            "cnn.1.weight",
+            "cnn.1.bias",
+            "cnn.4.weight",
+            "cnn.4.bias",
+            "cnn.5.weight",
+            "cnn.5.bias",
+            "projection.weight",
+            "projection.bias",
+            "rnn.weight_ih_l0",
+            "rnn.weight_hh_l0",
+            "rnn.bias_ih_l0",
+            "rnn.bias_hh_l0",
+            "rnn.weight_ih_l0_reverse",
+            "rnn.weight_hh_l0_reverse",
+            "rnn.bias_ih_l0_reverse",
+            "rnn.bias_hh_l0_reverse",
+            "rnn.weight_ih_l1",
+            "rnn.weight_hh_l1",
+            "rnn.bias_ih_l1",
+            "rnn.bias_hh_l1",
+            "rnn.weight_ih_l1_reverse",
+            "rnn.weight_hh_l1_reverse",
+            "rnn.bias_ih_l1_reverse",
+            "rnn.bias_hh_l1_reverse",
+            "head.weight",
+            "head.bias"
+          ],
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {},
+            "blocked_operator": null
+          }
+        }
+      },
+      "timings": {
+        "cnn": {
+          "status": "passed",
+          "device": "cpu",
+          "repeats": [
+            {
+              "index": 1,
+              "seconds": {
+                "forward": [
+                  0.0048473000060766935,
+                  0.004276599967852235,
+                  0.00430109997978434,
+                  0.00450260000070557,
+                  0.004455699992831796
+                ],
+                "backward_optimizer": [
+                  0.004569499986246228,
+                  0.004379899997729808,
+                  0.004485699988435954,
+                  0.005538500030525029,
+                  0.004792099993210286
+                ],
+                "total": [
+                  0.009416799992322922,
+                  0.008656499965582043,
+                  0.008786799968220294,
+                  0.010041100031230599,
+                  0.009247799986042082
+                ]
+              },
+              "forward": {
+                "mean_ms": 4.476659989450127,
+                "median_ms": 4.455699992831796,
+                "stdev_ms": 0.22876382843596302,
+                "min_ms": 4.276599967852235,
+                "max_ms": 4.8473000060766935,
+                "images_per_second": 1787.0465969837144
+              },
+              "backward_optimizer": {
+                "mean_ms": 4.753139999229461,
+                "median_ms": 4.569499986246228,
+                "stdev_ms": 0.46445241208027305,
+                "min_ms": 4.379899997729808,
+                "max_ms": 5.538500030525029,
+                "images_per_second": 1683.09791028602
+              },
+              "total": {
+                "mean_ms": 9.229799988679588,
+                "median_ms": 9.247799986042082,
+                "stdev_ms": 0.5519109291637351,
+                "min_ms": 8.656499965582043,
+                "max_ms": 10.041100031230599,
+                "images_per_second": 866.7576772857542
+              }
+            },
+            {
+              "index": 2,
+              "seconds": {
+                "forward": [
+                  0.004509799997322261,
+                  0.004625300003681332,
+                  0.004502199997659773,
+                  0.004554900049697608,
+                  0.004418800002895296
+                ],
+                "backward_optimizer": [
+                  0.004673600022215396,
+                  0.004822899994906038,
+                  0.004939400008879602,
+                  0.004626399953849614,
+                  0.004559400025755167
+                ],
+                "total": [
+                  0.009183400019537657,
+                  0.00944819999858737,
+                  0.009441600006539375,
+                  0.009181300003547221,
+                  0.008978200028650463
+                ]
+              },
+              "forward": {
+                "mean_ms": 4.522200010251254,
+                "median_ms": 4.509799997322261,
+                "stdev_ms": 0.0757367539088289,
+                "min_ms": 4.418800002895296,
+                "max_ms": 4.625300003681332,
+                "images_per_second": 1769.0504581542205
+              },
+              "backward_optimizer": {
+                "mean_ms": 4.724340001121163,
+                "median_ms": 4.673600022215396,
+                "stdev_ms": 0.15438334844193913,
+                "min_ms": 4.559400025755167,
+                "max_ms": 4.939400008879602,
+                "images_per_second": 1693.3582252973895
+              },
+              "total": {
+                "mean_ms": 9.246540011372417,
+                "median_ms": 9.183400019537657,
+                "stdev_ms": 0.19935170909426156,
+                "min_ms": 8.978200028650463,
+                "max_ms": 9.44819999858737,
+                "images_per_second": 865.1884910637617
+              }
+            },
+            {
+              "index": 3,
+              "seconds": {
+                "forward": [
+                  0.0046165999956429005,
+                  0.004653499985579401,
+                  0.004607700044289231,
+                  0.004413300019223243,
+                  0.004353800031822175
+                ],
+                "backward_optimizer": [
+                  0.005509899987373501,
+                  0.004749300016555935,
+                  0.0048729999689385295,
+                  0.004895399964880198,
+                  0.0046656999620608985
+                ],
+                "total": [
+                  0.010126499983016402,
+                  0.009402800002135336,
+                  0.00948070001322776,
+                  0.009308699984103441,
+                  0.009019499993883073
+                ]
+              },
+              "forward": {
+                "mean_ms": 4.52898001531139,
+                "median_ms": 4.607700044289231,
+                "stdev_ms": 0.13550757822106138,
+                "min_ms": 4.353800031822175,
+                "max_ms": 4.653499985579401,
+                "images_per_second": 1766.402141973232
+              },
+              "backward_optimizer": {
+                "mean_ms": 4.9386599799618125,
+                "median_ms": 4.8729999689385295,
+                "stdev_ms": 0.33273945480423855,
+                "min_ms": 4.6656999620608985,
+                "max_ms": 5.509899987373501,
+                "images_per_second": 1619.8726035927377
+              },
+              "total": {
+                "mean_ms": 9.467639995273203,
+                "median_ms": 9.402800002135336,
+                "stdev_ms": 0.40760356359600475,
+                "min_ms": 9.019499993883073,
+                "max_ms": 10.126499983016402,
+                "images_per_second": 844.9835443673467
+              }
+            }
+          ],
+          "forward": {
+            "mean_ms": 4.509280005004257,
+            "median_ms": 4.50260000070557,
+            "stdev_ms": 0.14971888113986576,
+            "min_ms": 4.276599967852235,
+            "max_ms": 4.8473000060766935,
+            "images_per_second": 1774.119147873242
+          },
+          "backward_optimizer": {
+            "mean_ms": 4.805379993437479,
+            "median_ms": 4.749300016555935,
+            "stdev_ms": 0.3312706581562712,
+            "min_ms": 4.379899997729808,
+            "max_ms": 5.538500030525029,
+            "images_per_second": 1664.8007048194502
+          },
+          "total": {
+            "mean_ms": 9.314659998441737,
+            "median_ms": 9.308699984103441,
+            "stdev_ms": 0.3980462946379415,
+            "min_ms": 8.656499965582043,
+            "max_ms": 10.126499983016402,
+            "images_per_second": 858.8611931448203
+          },
+          "repeat_mean_stdev_ms": 0.13274869740549544,
+          "warnings": []
+        },
+        "integrated": {
+          "status": "passed",
+          "device": "cpu",
+          "repeats": [
+            {
+              "index": 1,
+              "seconds": {
+                "forward": [
+                  0.009759999986272305,
+                  0.009964900033082813,
+                  0.009985400014556944,
+                  0.009964100026991218,
+                  0.009594700008165091
+                ],
+                "backward_optimizer": [
+                  0.015243100002408028,
+                  0.01535669999429956,
+                  0.01629020000109449,
+                  0.0161954999784939,
+                  0.016183899948373437
+                ],
+                "total": [
+                  0.025003099988680333,
+                  0.025321600027382374,
+                  0.026275600015651435,
+                  0.026159600005485117,
+                  0.025778599956538528
+                ]
+              },
+              "forward": {
+                "mean_ms": 9.853820013813674,
+                "median_ms": 9.964100026991218,
+                "stdev_ms": 0.1715802461518046,
+                "min_ms": 9.594700008165091,
+                "max_ms": 9.985400014556944,
+                "images_per_second": 811.8678836009914
+              },
+              "backward_optimizer": {
+                "mean_ms": 15.853879984933883,
+                "median_ms": 16.183899948373437,
+                "stdev_ms": 0.5089775738950616,
+                "min_ms": 15.243100002408028,
+                "max_ms": 16.29020000109449,
+                "images_per_second": 504.60833610463106
+              },
+              "total": {
+                "mean_ms": 25.707699998747557,
+                "median_ms": 25.778599956538528,
+                "stdev_ms": 0.5425138734121278,
+                "min_ms": 25.003099988680333,
+                "max_ms": 26.275600015651435,
+                "images_per_second": 311.19081055052567
+              }
+            },
+            {
+              "index": 2,
+              "seconds": {
+                "forward": [
+                  0.009527000016532838,
+                  0.009447499993257225,
+                  0.009777600003872067,
+                  0.009733300015795976,
+                  0.010518700000829995
+                ],
+                "backward_optimizer": [
+                  0.015286499983631074,
+                  0.014988299983087927,
+                  0.01505320001160726,
+                  0.015003399981651455,
+                  0.015352799964603037
+                ],
+                "total": [
+                  0.024813500000163913,
+                  0.02443579997634515,
+                  0.024830800015479326,
+                  0.02473669999744743,
+                  0.02587149996543303
+                ]
+              },
+              "forward": {
+                "mean_ms": 9.80082000605762,
+                "median_ms": 9.733300015795976,
+                "stdev_ms": 0.42434131975022105,
+                "min_ms": 9.447499993257225,
+                "max_ms": 10.518700000829995,
+                "images_per_second": 816.2582309495958
+              },
+              "backward_optimizer": {
+                "mean_ms": 15.13683998491615,
+                "median_ms": 15.05320001160726,
+                "stdev_ms": 0.17022253067032123,
+                "min_ms": 14.988299983087927,
+                "max_ms": 15.352799964603037,
+                "images_per_second": 528.5118960081493
+              },
+              "total": {
+                "mean_ms": 24.93765999097377,
+                "median_ms": 24.813500000163913,
+                "stdev_ms": 0.54569685926799,
+                "min_ms": 24.43579997634515,
+                "max_ms": 25.87149996543303,
+                "images_per_second": 320.79994686332293
+              }
+            },
+            {
+              "index": 3,
+              "seconds": {
+                "forward": [
+                  0.009440200054086745,
+                  0.00964240002213046,
+                  0.009749600023496896,
+                  0.009736899985000491,
+                  0.010098900005687028
+                ],
+                "backward_optimizer": [
+                  0.015473499952349812,
+                  0.015577299986034632,
+                  0.015370599983725697,
+                  0.015985100006219,
+                  0.015260799962561578
+                ],
+                "total": [
+                  0.024913700006436557,
+                  0.02521970000816509,
+                  0.025120200007222593,
+                  0.02572199999121949,
+                  0.025359699968248606
+                ]
+              },
+              "forward": {
+                "mean_ms": 9.733600018080324,
+                "median_ms": 9.736899985000491,
+                "stdev_ms": 0.23880533339581825,
+                "min_ms": 9.440200054086745,
+                "max_ms": 10.098900005687028,
+                "images_per_second": 821.8952890133011
+              },
+              "backward_optimizer": {
+                "mean_ms": 15.533459978178144,
+                "median_ms": 15.473499952349812,
+                "stdev_ms": 0.2785510401273048,
+                "min_ms": 15.260799962561578,
+                "max_ms": 15.985100006219,
+                "images_per_second": 515.0172602394207
+              },
+              "total": {
+                "mean_ms": 25.267059996258467,
+                "median_ms": 25.21970000816509,
+                "stdev_ms": 0.30175597371229973,
+                "min_ms": 24.913700006436557,
+                "max_ms": 25.72199999121949,
+                "images_per_second": 316.61776246166494
+              }
+            }
+          ],
+          "forward": {
+            "mean_ms": 9.796080012650538,
+            "median_ms": 9.749600023496896,
+            "stdev_ms": 0.2806158940701691,
+            "min_ms": 9.440200054086745,
+            "max_ms": 10.518700000829995,
+            "images_per_second": 816.6531908343844
+          },
+          "backward_optimizer": {
+            "mean_ms": 15.508059982676059,
+            "median_ms": 15.35669999429956,
+            "stdev_ms": 0.44342037881495117,
+            "min_ms": 14.988299983087927,
+            "max_ms": 16.29020000109449,
+            "images_per_second": 515.8607852263108
+          },
+          "total": {
+            "mean_ms": 25.304139995326597,
+            "median_ms": 25.21970000816509,
+            "stdev_ms": 0.5493741967219791,
+            "min_ms": 24.43579997634515,
+            "max_ms": 26.275600015651435,
+            "images_per_second": 316.1537993971545
+          },
+          "repeat_mean_stdev_ms": 0.38635682748106426,
+          "warnings": []
+        }
+      }
+    },
+    "directml": {
+      "device": "privateuseone:0",
+      "name": "AMD Radeon RX 6700 XT",
+      "probes": {
+        "conv2d": {
+          "status": "failed",
+          "device": "privateuseone:0",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "passed",
+            "loss": "passed",
+            "backward": "passed",
+            "gradients": "passed",
+            "optimizer": "failed"
+          },
+          "iterations_completed": 0,
+          "losses": [
+            0.38628214597702026
+          ],
+          "operation_forward_stage": "forward",
+          "parameter_devices": [
+            "privateuseone:0"
+          ],
+          "input_device": "privateuseone:0",
+          "output_shape": [
+            8,
+            8,
+            80,
+            215
+          ],
+          "output_device": "privateuseone:0",
+          "gradients": {
+            "input": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 2.341687650186941e-05
+            },
+            "weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.08247276395559311
+            },
+            "bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.08270535618066788
+            }
+          },
+          "failed_stage": "optimizer",
+          "error_type": "UserWarning",
+          "error": "The operator 'aten::lerp.Scalar_out' is not currently supported on the DML backend and will fall back to run on the CPU. This may have performance implications. (Triggered internally at C:\\__w\\1\\s\\pytorch-directml-plugin\\torch_directml\\csrc\\dml\\dml_cpu_fallback.cpp:17.)",
+          "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\benchmarks\\backend_probe.py\", line 300, in probe\n    optimizer.step()\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\optimizer.py\", line 484, in wrapper\n    out = func(*args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\optimizer.py\", line 89, in _use_grad\n    ret = func(self, *args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\adam.py\", line 226, in step\n    adam(\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\optimizer.py\", line 161, in maybe_fallback\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\adam.py\", line 766, in adam\n    func(\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\adam.py\", line 379, in _single_tensor_adam\n    exp_avg.lerp_(grad, 1 - beta1)\nUserWarning: The operator 'aten::lerp.Scalar_out' is not currently supported on the DML backend and will fall back to run on the CPU. This may have performance implications. (Triggered internally at C:\\__w\\1\\s\\pytorch-directml-plugin\\torch_directml\\csrc\\dml\\dml_cpu_fallback.cpp:17.)\n",
+          "fallback_blocked": true,
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {
+              "aten::_to_copy": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::detach": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::convolution": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::pow.Tensor_Scalar": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::mean": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::ones_like": [
+                "PrivateUse1",
+                "CompositeExplicitAutograd"
+              ],
+              "aten::expand": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::div.Scalar": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::mul.Scalar": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::mul.Tensor": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::convolution_backward": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::zeros_like": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::lerp_.Scalar": [
+                "CompositeExplicitAutogradNonFunctional"
+              ]
+            },
+            "blocked_operator": null
+          }
+        },
+        "batchnorm2d": {
+          "status": "failed",
+          "device": "privateuseone:0",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "passed",
+            "loss": "passed",
+            "backward": "passed",
+            "gradients": "passed",
+            "optimizer": "failed"
+          },
+          "iterations_completed": 0,
+          "losses": [
+            0.999989926815033
+          ],
+          "operation_forward_stage": "forward",
+          "parameter_devices": [
+            "privateuseone:0"
+          ],
+          "input_device": "privateuseone:0",
+          "output_shape": [
+            8,
+            8,
+            40,
+            107
+          ],
+          "output_device": "privateuseone:0",
+          "gradients": {
+            "input": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 3.372530033018961e-10
+            },
+            "weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.2499975711107254
+            },
+            "bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 4.0745362639427185e-10
+            }
+          },
+          "failed_stage": "optimizer",
+          "error_type": "UserWarning",
+          "error": "The operator 'aten::lerp.Scalar_out' is not currently supported on the DML backend and will fall back to run on the CPU. This may have performance implications. (Triggered internally at C:\\__w\\1\\s\\pytorch-directml-plugin\\torch_directml\\csrc\\dml\\dml_cpu_fallback.cpp:17.)",
+          "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\benchmarks\\backend_probe.py\", line 300, in probe\n    optimizer.step()\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\optimizer.py\", line 484, in wrapper\n    out = func(*args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\optimizer.py\", line 89, in _use_grad\n    ret = func(self, *args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\adam.py\", line 226, in step\n    adam(\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\optimizer.py\", line 161, in maybe_fallback\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\adam.py\", line 766, in adam\n    func(\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\adam.py\", line 379, in _single_tensor_adam\n    exp_avg.lerp_(grad, 1 - beta1)\nUserWarning: The operator 'aten::lerp.Scalar_out' is not currently supported on the DML backend and will fall back to run on the CPU. This may have performance implications. (Triggered internally at C:\\__w\\1\\s\\pytorch-directml-plugin\\torch_directml\\csrc\\dml\\dml_cpu_fallback.cpp:17.)\n",
+          "fallback_blocked": true,
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {
+              "aten::_to_copy": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::detach": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::add_.Tensor": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::empty.memory_format": [
+                "PrivateUse1"
+              ],
+              "aten::native_batch_norm": [
+                "PrivateUse1"
+              ],
+              "aten::pow.Tensor_Scalar": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::mean": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::ones_like": [
+                "PrivateUse1",
+                "CompositeExplicitAutograd"
+              ],
+              "aten::expand": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::div.Scalar": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::mul.Scalar": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::mul.Tensor": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::native_batch_norm_backward": [
+                "PrivateUse1"
+              ],
+              "aten::zeros_like": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::lerp_.Scalar": [
+                "CompositeExplicitAutogradNonFunctional"
+              ]
+            },
+            "blocked_operator": null
+          }
+        },
+        "relu": {
+          "status": "passed",
+          "device": "privateuseone:0",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "passed",
+            "loss": "passed",
+            "backward": "passed",
+            "gradients": "passed",
+            "optimizer": "not_applicable"
+          },
+          "iterations_completed": 5,
+          "losses": [
+            0.5021982789039612,
+            0.5021982789039612,
+            0.5021982789039612,
+            0.5021982789039612,
+            0.5021982789039612
+          ],
+          "operation_forward_stage": "forward",
+          "parameter_devices": [],
+          "input_device": "privateuseone:0",
+          "output_shape": [
+            8,
+            8,
+            40,
+            107
+          ],
+          "output_device": "privateuseone:0",
+          "gradients": {
+            "input": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 3.379875124664977e-05
+            }
+          },
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {
+              "aten::_to_copy": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::detach": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::relu": [
+                "PrivateUse1"
+              ],
+              "aten::pow.Tensor_Scalar": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::mean": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::ones_like": [
+                "PrivateUse1",
+                "CompositeExplicitAutograd"
+              ],
+              "aten::expand": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::div.Scalar": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::mul.Scalar": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::mul.Tensor": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::threshold_backward": [
+                "CompositeExplicitAutogradNonFunctional"
+              ]
+            },
+            "blocked_operator": null
+          }
+        },
+        "maxpool2d": {
+          "status": "passed",
+          "device": "privateuseone:0",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "passed",
+            "loss": "passed",
+            "backward": "passed",
+            "gradients": "passed",
+            "optimizer": "not_applicable"
+          },
+          "iterations_completed": 5,
+          "losses": [
+            1.5582934617996216,
+            1.5582934617996216,
+            1.5582934617996216,
+            1.5582934617996216,
+            1.5582934617996216
+          ],
+          "operation_forward_stage": "forward",
+          "parameter_devices": [],
+          "input_device": "privateuseone:0",
+          "output_shape": [
+            8,
+            8,
+            20,
+            53
+          ],
+          "output_device": "privateuseone:0",
+          "gradients": {
+            "input": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.00013647043670061976
+            }
+          },
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {
+              "aten::_to_copy": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::detach": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::max_pool2d_with_indices": [
+                "PrivateUse1",
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::pow.Tensor_Scalar": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::mean": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::ones_like": [
+                "PrivateUse1",
+                "CompositeExplicitAutograd"
+              ],
+              "aten::expand": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::div.Scalar": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::mul.Scalar": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::mul.Tensor": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::max_pool2d_with_indices_backward": [
+                "PrivateUse1",
+                "CompositeExplicitAutogradNonFunctional"
+              ]
+            },
+            "blocked_operator": null
+          }
+        },
+        "cnn": {
+          "status": "failed",
+          "device": "privateuseone:0",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "passed",
+            "loss": "passed",
+            "backward": "passed",
+            "gradients": "passed",
+            "optimizer": "failed"
+          },
+          "iterations_completed": 0,
+          "losses": [
+            1.4927693605422974
+          ],
+          "operation_forward_stage": "forward",
+          "parameter_devices": [
+            "privateuseone:0"
+          ],
+          "input_device": "privateuseone:0",
+          "output_shape": [
+            8,
+            16,
+            20,
+            53
+          ],
+          "output_device": "privateuseone:0",
+          "gradients": {
+            "input": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.00010137194476556033
+            },
+            "0.weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.05114953964948654
+            },
+            "0.bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 4.540197551250458e-09
+            },
+            "1.weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.026679906994104385
+            },
+            "1.bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.006964407861232758
+            },
+            "4.weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.03173825517296791
+            },
+            "4.bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 9.173527359962463e-08
+            },
+            "5.weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.2001360058784485
+            },
+            "5.bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.13226266205310822
+            }
+          },
+          "failed_stage": "optimizer",
+          "error_type": "UserWarning",
+          "error": "The operator 'aten::lerp.Scalar_out' is not currently supported on the DML backend and will fall back to run on the CPU. This may have performance implications. (Triggered internally at C:\\__w\\1\\s\\pytorch-directml-plugin\\torch_directml\\csrc\\dml\\dml_cpu_fallback.cpp:17.)",
+          "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\benchmarks\\backend_probe.py\", line 300, in probe\n    optimizer.step()\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\optimizer.py\", line 484, in wrapper\n    out = func(*args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\optimizer.py\", line 89, in _use_grad\n    ret = func(self, *args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\adam.py\", line 226, in step\n    adam(\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\optimizer.py\", line 161, in maybe_fallback\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\adam.py\", line 766, in adam\n    func(\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\adam.py\", line 379, in _single_tensor_adam\n    exp_avg.lerp_(grad, 1 - beta1)\nUserWarning: The operator 'aten::lerp.Scalar_out' is not currently supported on the DML backend and will fall back to run on the CPU. This may have performance implications. (Triggered internally at C:\\__w\\1\\s\\pytorch-directml-plugin\\torch_directml\\csrc\\dml\\dml_cpu_fallback.cpp:17.)\n",
+          "fallback_blocked": true,
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {
+              "aten::_to_copy": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::detach": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::convolution": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::add_.Tensor": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::empty.memory_format": [
+                "PrivateUse1"
+              ],
+              "aten::native_batch_norm": [
+                "PrivateUse1"
+              ],
+              "aten::relu": [
+                "PrivateUse1"
+              ],
+              "aten::max_pool2d_with_indices": [
+                "PrivateUse1",
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::pow.Tensor_Scalar": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::mean": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::ones_like": [
+                "PrivateUse1",
+                "CompositeExplicitAutograd"
+              ],
+              "aten::expand": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::div.Scalar": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::mul.Scalar": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::mul.Tensor": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::max_pool2d_with_indices_backward": [
+                "PrivateUse1",
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::threshold_backward": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::native_batch_norm_backward": [
+                "PrivateUse1"
+              ],
+              "aten::convolution_backward": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::zeros_like": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::lerp_.Scalar": [
+                "CompositeExplicitAutogradNonFunctional"
+              ]
+            },
+            "blocked_operator": null
+          }
+        },
+        "bilstm": {
+          "status": "failed",
+          "device": "privateuseone:0",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "failed"
+          },
+          "iterations_completed": 0,
+          "losses": [],
+          "operation_forward_stage": "forward",
+          "parameter_devices": [
+            "privateuseone:0"
+          ],
+          "input_device": "privateuseone:0",
+          "failed_stage": "forward",
+          "error_type": "NativeOperationUnavailable",
+          "error": "aten::_thnn_fused_lstm_cell: no PrivateUse1 or composite kernel; CPU fallback blocked before execution",
+          "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\benchmarks\\backend_probe.py\", line 257, in probe\n    output = forward()\n             ^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\benchmarks\\backend_probe.py\", line 214, in forward\n    output = model(x)\n             ^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1553, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1562, in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\nn\\modules\\rnn.py\", line 917, in forward\n    result = _VF.lstm(input, hx, self._flat_weights, self.bias, self.num_layers,\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\benchmarks\\backend_probe.py\", line 116, in __torch_dispatch__\n    raise NativeOperationUnavailable(\nNativeOperationUnavailable: aten::_thnn_fused_lstm_cell: no PrivateUse1 or composite kernel; CPU fallback blocked before execution\n",
+          "fallback_blocked": true,
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {
+              "aten::_to_copy": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::detach": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::zeros": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::unbind.int": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::t": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::mm": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::_thnn_fused_lstm_cell": []
+            },
+            "blocked_operator": "aten::_thnn_fused_lstm_cell"
+          }
+        },
+        "linear": {
+          "status": "failed",
+          "device": "privateuseone:0",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "passed",
+            "loss": "passed",
+            "backward": "passed",
+            "gradients": "passed",
+            "optimizer": "failed"
+          },
+          "iterations_completed": 0,
+          "losses": [
+            0.3273628354072571
+          ],
+          "operation_forward_stage": "forward",
+          "parameter_devices": [
+            "privateuseone:0"
+          ],
+          "input_device": "privateuseone:0",
+          "output_shape": [
+            24,
+            8,
+            17
+          ],
+          "output_device": "privateuseone:0",
+          "gradients": {
+            "input": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.0002537783293519169
+            },
+            "weight": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.021962208673357964
+            },
+            "bias": {
+              "finite": true,
+              "nonzero": true,
+              "max_abs": 0.01350350957363844
+            }
+          },
+          "failed_stage": "optimizer",
+          "error_type": "UserWarning",
+          "error": "The operator 'aten::lerp.Scalar_out' is not currently supported on the DML backend and will fall back to run on the CPU. This may have performance implications. (Triggered internally at C:\\__w\\1\\s\\pytorch-directml-plugin\\torch_directml\\csrc\\dml\\dml_cpu_fallback.cpp:17.)",
+          "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\benchmarks\\backend_probe.py\", line 300, in probe\n    optimizer.step()\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\optimizer.py\", line 484, in wrapper\n    out = func(*args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\optimizer.py\", line 89, in _use_grad\n    ret = func(self, *args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\adam.py\", line 226, in step\n    adam(\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\optimizer.py\", line 161, in maybe_fallback\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\adam.py\", line 766, in adam\n    func(\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\optim\\adam.py\", line 379, in _single_tensor_adam\n    exp_avg.lerp_(grad, 1 - beta1)\nUserWarning: The operator 'aten::lerp.Scalar_out' is not currently supported on the DML backend and will fall back to run on the CPU. This may have performance implications. (Triggered internally at C:\\__w\\1\\s\\pytorch-directml-plugin\\torch_directml\\csrc\\dml\\dml_cpu_fallback.cpp:17.)\n",
+          "fallback_blocked": true,
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {
+              "aten::_to_copy": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::detach": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::_reshape_alias": [
+                "PrivateUse1"
+              ],
+              "aten::t": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::addmm": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::view": [
+                "PrivateUse1"
+              ],
+              "aten::pow.Tensor_Scalar": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::mean": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::ones_like": [
+                "PrivateUse1",
+                "CompositeExplicitAutograd"
+              ],
+              "aten::expand": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::div.Scalar": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::mul.Scalar": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::mul.Tensor": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::mm": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::sum.dim_IntList": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::zeros_like": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::lerp_.Scalar": [
+                "CompositeExplicitAutogradNonFunctional"
+              ]
+            },
+            "blocked_operator": null
+          }
+        },
+        "ctc": {
+          "status": "failed",
+          "device": "privateuseone:0",
+          "batch": 8,
+          "stages": {
+            "setup": "passed",
+            "forward": "passed",
+            "loss": "failed"
+          },
+          "iterations_completed": 0,
+          "losses": [],
+          "operation_forward_stage": "loss",
+          "parameter_devices": [],
+          "input_device": "privateuseone:0",
+          "output_shape": [
+            24,
+            8,
+            17
+          ],
+          "output_device": "privateuseone:0",
+          "failed_stage": "loss",
+          "error_type": "NativeOperationUnavailable",
+          "error": "aten::_ctc_loss.Tensor: no PrivateUse1 or composite kernel; CPU fallback blocked before execution",
+          "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\benchmarks\\backend_probe.py\", line 268, in probe\n    loss = loss_for(output)\n           ^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\benchmarks\\backend_probe.py\", line 219, in loss_for\n    return criterion(output.log_softmax(2), target_tensor, input_lengths, target_lengths)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1553, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1562, in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\nn\\modules\\loss.py\", line 1796, in forward\n    return F.ctc_loss(log_probs, targets, input_lengths, target_lengths, self.blank, self.reduction,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\.venv-directml\\Lib\\site-packages\\torch\\nn\\functional.py\", line 2705, in ctc_loss\n    return torch.ctc_loss(\n           ^^^^^^^^^^^^^^^\n  File \"C:\\Users\\phcastello\\Projetos\\CaptchaDecay\\benchmarks\\backend_probe.py\", line 116, in __torch_dispatch__\n    raise NativeOperationUnavailable(\nNativeOperationUnavailable: aten::_ctc_loss.Tensor: no PrivateUse1 or composite kernel; CPU fallback blocked before execution\n",
+          "fallback_blocked": true,
+          "warnings": [],
+          "dispatch_audit": {
+            "operators": {
+              "aten::_to_copy": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::detach": [
+                "CompositeExplicitAutograd"
+              ],
+              "aten::_log_softmax": [
+                "CompositeExplicitAutogradNonFunctional"
+              ],
+              "aten::_ctc_loss.Tensor": []
+            },
+            "blocked_operator": "aten::_ctc_loss.Tensor"
+          }
+        },
+        "integrated": {
+          "status": "skipped",
+          "reason": "critical components failed native compatibility",
+          "failed_components": [
+            "cnn",
+            "bilstm",
+            "linear",
+            "ctc"
+          ]
+        }
+      },
+      "timings": {
+        "cnn": {
+          "status": "skipped",
+          "reason": "compatibility failed"
+        },
+        "integrated": {
+          "status": "skipped",
+          "reason": "compatibility failed"
+        }
+      }
+    }
+  },
+  "comparisons": {
+    "conv2d": {
+      "rtol": 0.001,
+      "atol": 1e-05,
+      "tensors": {
+        "grad:bias": {
+          "status": "passed",
+          "max_abs": 1.1175870895385742e-07,
+          "max_relative": 1.614223037904594e-06
+        },
+        "grad:input": {
+          "status": "passed",
+          "max_abs": 9.094947017729282e-12,
+          "max_relative": 6.039093705112464e-07
+        },
+        "grad:weight": {
+          "status": "passed",
+          "max_abs": 1.4901161193847656e-07,
+          "max_relative": 3.362813004059717e-06
+        },
+        "loss": {
+          "status": "passed",
+          "max_abs": 0.0,
+          "max_relative": 0.0
+        },
+        "output": {
+          "status": "passed",
+          "max_abs": 5.960464477539062e-07,
+          "max_relative": 0.007158542051911354
+        },
+        "update:bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        }
+      },
+      "tensors_compared": 5,
+      "status": "partial"
+    },
+    "batchnorm2d": {
+      "rtol": 0.001,
+      "atol": 1e-05,
+      "tensors": {
+        "grad:bias": {
+          "status": "passed",
+          "max_abs": 4.103640094399452e-09,
+          "max_relative": 0.0004103640094399452
+        },
+        "grad:input": {
+          "status": "passed",
+          "max_abs": 1.6357887266948978e-11,
+          "max_relative": 1.6357887488993583e-06
+        },
+        "grad:weight": {
+          "status": "passed",
+          "max_abs": 4.470348358154297e-08,
+          "max_relative": 1.788157391047207e-07
+        },
+        "loss": {
+          "status": "passed",
+          "max_abs": 1.1920928955078125e-07,
+          "max_relative": 1.1921048326257733e-07
+        },
+        "output": {
+          "status": "passed",
+          "max_abs": 4.76837158203125e-07,
+          "max_relative": 6.795983790652826e-05
+        },
+        "update:bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        }
+      },
+      "tensors_compared": 5,
+      "status": "partial"
+    },
+    "relu": {
+      "rtol": 0.001,
+      "atol": 1e-05,
+      "tensors": {
+        "grad:input": {
+          "status": "passed",
+          "max_abs": 3.637978807091713e-12,
+          "max_relative": 1.2456328590815247e-07
+        },
+        "loss": {
+          "status": "passed",
+          "max_abs": 5.960464477539063e-08,
+          "max_relative": 1.186874882819211e-07
+        },
+        "output": {
+          "status": "passed",
+          "max_abs": 0.0,
+          "max_relative": 0.0
+        }
+      },
+      "tensors_compared": 3,
+      "status": "passed"
+    },
+    "maxpool2d": {
+      "rtol": 0.001,
+      "atol": 1e-05,
+      "tensors": {
+        "grad:input": {
+          "status": "passed",
+          "max_abs": 1.4551915228366852e-11,
+          "max_relative": 1.3642420526593924e-07
+        },
+        "loss": {
+          "status": "passed",
+          "max_abs": 0.0,
+          "max_relative": 0.0
+        },
+        "output": {
+          "status": "passed",
+          "max_abs": 0.0,
+          "max_relative": 0.0
+        }
+      },
+      "tensors_compared": 3,
+      "status": "passed"
+    },
+    "cnn": {
+      "rtol": 0.001,
+      "atol": 1e-05,
+      "tensors": {
+        "grad:0.bias": {
+          "status": "passed",
+          "max_abs": 3.166496753692627e-08,
+          "max_relative": 0.003166496753692627
+        },
+        "grad:0.weight": {
+          "status": "passed",
+          "max_abs": 1.0058283805847168e-07,
+          "max_relative": 6.840137211838737e-05
+        },
+        "grad:1.bias": {
+          "status": "passed",
+          "max_abs": 7.776543498039246e-08,
+          "max_relative": 4.0749964682618156e-05
+        },
+        "grad:1.weight": {
+          "status": "passed",
+          "max_abs": 1.2712553143501282e-07,
+          "max_relative": 5.458627492771484e-05
+        },
+        "grad:4.bias": {
+          "status": "passed",
+          "max_abs": 1.064581738319248e-07,
+          "max_relative": 0.010645817965269089
+        },
+        "grad:4.weight": {
+          "status": "passed",
+          "max_abs": 1.5832483768463135e-07,
+          "max_relative": 0.003492372576147318
+        },
+        "grad:5.bias": {
+          "status": "passed",
+          "max_abs": 4.470348358154297e-08,
+          "max_relative": 3.5740669090955635e-07
+        },
+        "grad:5.weight": {
+          "status": "passed",
+          "max_abs": 1.1920928955078125e-07,
+          "max_relative": 6.286529696808429e-07
+        },
+        "grad:input": {
+          "status": "passed",
+          "max_abs": 6.548361852765083e-11,
+          "max_relative": 5.74686964682769e-06
+        },
+        "loss": {
+          "status": "passed",
+          "max_abs": 1.1920928955078125e-07,
+          "max_relative": 7.985781280694937e-08
+        },
+        "output": {
+          "status": "passed",
+          "max_abs": 2.86102294921875e-06,
+          "max_relative": 0.0045701805502176285
+        },
+        "update:0.bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:0.weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:1.bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:1.weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:4.bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:4.weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:5.bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:5.weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        }
+      },
+      "tensors_compared": 11,
+      "status": "partial"
+    },
+    "bilstm": {
+      "rtol": 0.001,
+      "atol": 1e-05,
+      "tensors": {
+        "grad:bias_hh_l0": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:bias_hh_l0_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:bias_hh_l1": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:bias_hh_l1_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:bias_ih_l0": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:bias_ih_l0_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:bias_ih_l1": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:bias_ih_l1_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:input": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:weight_hh_l0": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:weight_hh_l0_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:weight_hh_l1": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:weight_hh_l1_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:weight_ih_l0": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:weight_ih_l0_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:weight_ih_l1": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:weight_ih_l1_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "loss": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "output": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:bias_hh_l0": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:bias_hh_l0_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:bias_hh_l1": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:bias_hh_l1_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:bias_ih_l0": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:bias_ih_l0_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:bias_ih_l1": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:bias_ih_l1_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:weight_hh_l0": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:weight_hh_l0_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:weight_hh_l1": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:weight_hh_l1_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:weight_ih_l0": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:weight_ih_l0_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:weight_ih_l1": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:weight_ih_l1_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        }
+      },
+      "tensors_compared": 0,
+      "status": "not_comparable"
+    },
+    "linear": {
+      "rtol": 0.001,
+      "atol": 1e-05,
+      "tensors": {
+        "grad:bias": {
+          "status": "passed",
+          "max_abs": 1.862645149230957e-09,
+          "max_relative": 1.3958923545942525e-06
+        },
+        "grad:input": {
+          "status": "passed",
+          "max_abs": 7.275957614183426e-11,
+          "max_relative": 5.4569682106375694e-06
+        },
+        "grad:weight": {
+          "status": "passed",
+          "max_abs": 9.313225746154785e-09,
+          "max_relative": 0.00026315092691220343
+        },
+        "loss": {
+          "status": "passed",
+          "max_abs": 5.960464477539063e-08,
+          "max_relative": 1.8207514074219944e-07
+        },
+        "output": {
+          "status": "passed",
+          "max_abs": 5.960464477539062e-07,
+          "max_relative": 0.00023794038861524314
+        },
+        "update:bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        }
+      },
+      "tensors_compared": 5,
+      "status": "partial"
+    },
+    "ctc": {
+      "rtol": 0.001,
+      "atol": 1e-05,
+      "tensors": {
+        "grad:input": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "input_logits": {
+          "status": "passed",
+          "max_abs": 0.0,
+          "max_relative": 0.0
+        },
+        "loss": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        }
+      },
+      "tensors_compared": 1,
+      "status": "partial"
+    },
+    "integrated": {
+      "rtol": 0.001,
+      "atol": 1e-05,
+      "tensors": {
+        "grad:cnn.0.bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:cnn.0.weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:cnn.1.bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:cnn.1.weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:cnn.4.bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:cnn.4.weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:cnn.5.bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:cnn.5.weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:head.bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:head.weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:input": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:projection.bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:projection.weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:rnn.bias_hh_l0": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:rnn.bias_hh_l0_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:rnn.bias_hh_l1": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:rnn.bias_hh_l1_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:rnn.bias_ih_l0": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:rnn.bias_ih_l0_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:rnn.bias_ih_l1": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:rnn.bias_ih_l1_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:rnn.weight_hh_l0": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:rnn.weight_hh_l0_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:rnn.weight_hh_l1": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:rnn.weight_hh_l1_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:rnn.weight_ih_l0": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:rnn.weight_ih_l0_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:rnn.weight_ih_l1": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "grad:rnn.weight_ih_l1_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "loss": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "output": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:cnn.0.bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:cnn.0.weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:cnn.1.bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:cnn.1.weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:cnn.4.bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:cnn.4.weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:cnn.5.bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:cnn.5.weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:head.bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:head.weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:projection.bias": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:projection.weight": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:rnn.bias_hh_l0": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:rnn.bias_hh_l0_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:rnn.bias_hh_l1": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:rnn.bias_hh_l1_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:rnn.bias_ih_l0": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:rnn.bias_ih_l0_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:rnn.bias_ih_l1": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:rnn.bias_ih_l1_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:rnn.weight_hh_l0": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:rnn.weight_hh_l0_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:rnn.weight_hh_l1": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:rnn.weight_hh_l1_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:rnn.weight_ih_l0": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:rnn.weight_ih_l0_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:rnn.weight_ih_l1": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        },
+        "update:rnn.weight_ih_l1_reverse": {
+          "status": "not_comparable",
+          "reason": "stage unavailable on one backend"
+        }
+      },
+      "tensors_compared": 0,
+      "status": "not_comparable"
+    }
+  },
+  "synchronization": "blocking loss CPU copy after forward; blocking copies of every parameter after Adam.step; copies included in timing; no CUDA API",
+  "fallback_policy": "native-only: pre-dispatch kernel audit plus fallback warnings promoted to errors; no hybrid run",
+  "timing_scope": "preloaded synthetic batch; forward includes loss/zero_grad; backward includes Adam and synchronization; validation excluded"
+}

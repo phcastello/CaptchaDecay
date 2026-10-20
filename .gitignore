@@ -1,6 +1,12 @@
 __pycache__/
 *.py[cod]
 .venv/
+.venv-directml/
+.venv-ml/
+/outputs/
+*.pt
+*.pth
+.pytest_cache/
 /vendor/
 /dataset/synthetic/*
 !/dataset/synthetic/train/

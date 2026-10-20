@@ -1,0 +1,5 @@
+# Isolated Windows CPython 3.12 benchmark; never install in the project/global env.
+torch==2.4.1
+torch-directml==0.2.5.dev240914
+# Required by torch-directml metadata (not imported by the benchmark).
+torchvision==0.19.1

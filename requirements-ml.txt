@@ -1,0 +1,5 @@
+# Install the official CPU torch wheel first; see ml/README.md.
+# The plain torch version also permits an explicit future CUDA installation.
+torch==2.14.1
+numpy==2.5.4
+Pillow==12.3.0

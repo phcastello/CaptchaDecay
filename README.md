@@ -1,8 +1,8 @@
 # CaptchaDecay
 
 PoC acadêmica para estudar a resistência de CAPTCHAs visuais legados diante
-de visão computacional moderna. Esta etapa prepara os dados; não implementa
-reconhecimento, treinamento, inferência ou OCR.
+de visão computacional moderna. Inclui preparação de dados e um primeiro
+baseline CRNN (CNN + BiLSTM + CTC) para treinamento sintético local.
 
 ## Metodologia
 
@@ -12,7 +12,7 @@ gerador de imagens. Isso permite produzir grandes quantidades de dados sem
 requisições adicionais ao serviço analisado. O conjunto **real** será usado
 para adaptação e avaliação após rotulagem manual.
 
-O reconhecedor futuro será desenvolvido independentemente. Nenhuma arquitetura,
+O reconhecedor é desenvolvido independentemente. Nenhuma arquitetura,
 código, peso, dataset, preprocessing ou pipeline de projetos existentes de
 CAPTCHA solving, incluindo `securimage_solver`, é utilizado.
 
@@ -80,6 +80,35 @@ As novas faixas aumentam perturbação, ocupação e interferência, mantendo a
 randomização. **Não são parâmetros medidos dos Correios**; `real/validation` e
 `real/test` não participam da calibração. Consulte [generator/README.md](generator/README.md)
 para pesos configuráveis, reprodução e o piloto separado `dataset/synthetic/pilot_v2`.
+
+## Experimentos CRNN em PyTorch
+
+O pipeline está em [ml/README.md](ml/README.md): ambiente isolado `.venv-ml`,
+charset determinístico, treino/validação, CER e exact match, checkpoints e
+retomada, avaliação offline e testes curtos de integração. O baseline A já foi
+concluído com 2.700 treino / 300 validação: melhor época 95, exact match 61,6667%
+e CER 0,106171. Seus checkpoints e resultados são preservados.
+
+A próxima comparação usa `dataset/synthetic/v2_9k_train` (9.000 treino / as
+mesmas 300 validações): B com LR fixo e C com `ReduceLROnPlateau` sobre CER,
+ambos do zero, seed 42, batch 16 e 30 épocas. O scheduler é opcional, registra
+LR usado/seguinte e tem estado recuperável no resume. CPU é o padrão;
+DirectML não é suportado. O protocolo, a preparação segura e os comandos
+manuais estão em [experiments/README.md](experiments/README.md).
+
+O `v2_main` local já estava ampliado antes desta tarefa e permanece intacto.
+Um snapshot independente dos 3.000 exemplos históricos, comprovado pelos
+fingerprints do baseline, fica em
+`outputs/experiments/dataset-expansion/baseline-dataset`. A referência por
+arquivo e os relatórios de integridade ficam na mesma pasta de experimento.
+
+```powershell
+.\.venv-ml\Scripts\python.exe -m ml.train --data dataset/synthetic/v2_9k_train --device cpu --batch-size 16 --scheduler none --dry-run
+```
+
+O dry-run faz uma atualização em memória e termina sem checkpoints. Os
+treinamentos completos B/C devem ser iniciados manualmente; a preparação
+executa somente testes, dry-runs e um benchmark curto CPU, sem GPU ou dados reais.
 
 ## Organizar e rotular dados reais
 
@@ -214,10 +243,11 @@ Uma coleta interrompida pode ser retomada posteriormente com o mesmo comando.
 
 ## Testes e atribuição
 
-Após instalar as dependências, execute:
+Para a suíte completa, use as dependências e o Python de `.venv-ml` descritos em
+[ml/README.md](ml/README.md). Execute:
 
 ```powershell
-python -m unittest discover -s tests -v
+.\.venv-ml\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
 Os testes cobrem nosso código e usam poucas imagens locais; respostas do coletor
