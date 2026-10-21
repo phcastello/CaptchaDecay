@@ -89,9 +89,17 @@ letras maiúsculas, nove dígitos e duas letras, sem listas, CPF/CNPJ,
 intervalos ou geração de códigos. O texto previsto do CAPTCHA é submetido
 exatamente como retornado pelo decoder, sem transformação.
 
-Headless é o padrão e foi validado neste servidor. `--headed` exige
-`DISPLAY` ou `WAYLAND_DISPLAY`; na ausência deles, falha antes da navegação.
-Não havia display neste ambiente: nenhuma janela foi validada visualmente.
+Headless é o padrão e foi validado neste servidor. Para exibir a janela no
+Windows, execute na raiz do projeto, pelo PowerShell:
+
+```powershell
+.\.venv-ml\Scripts\python.exe -m poc.run --live --headed --device cpu --max-attempts 1
+```
+
+No Linux, `--headed` exige `DISPLAY` ou `WAYLAND_DISPLAY`; na ausência deles,
+falha antes da navegação. Windows e macOS usam o display nativo, sem exigir
+essas variáveis. Não havia display no servidor Linux original: nenhuma janela
+foi validada visualmente naquele ambiente.
 `--timeout-ms` vale 30000 por padrão, limitado a 1–120000 ms por operação.
 Não existe opção de URL remota arbitrária, proxy, stealth ou troca de sessão.
 

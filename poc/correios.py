@@ -12,6 +12,7 @@ from dataclasses import dataclass
 import hashlib
 import io
 import os
+import sys
 import time
 from urllib.parse import parse_qs, urlsplit
 
@@ -292,7 +293,8 @@ async def execute(recognizer, code, artifacts: Artifacts, *, headed=False, max_a
             artifacts.log("model_loaded", checkpoint_sha256=recognizer.metadata.get("checkpoint_sha256"),
                           checkpoint_epoch=recognizer.metadata.get("checkpoint_epoch"),
                           model_load_seconds=recognizer.metadata.get("model_load_seconds"))
-        if headed and not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+        if (headed and sys.platform.startswith("linux")
+                and not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))):
             raise FlowError(outcome("site_changed_or_unrecognized", "headed_requires_display"))
         async with async_playwright() as playwright:
             try:
