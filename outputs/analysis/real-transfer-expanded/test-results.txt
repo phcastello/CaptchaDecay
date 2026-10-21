@@ -1,0 +1,18 @@
+Experimento E: testes automatizados não executados nesta etapa, por instrução explícita do usuário.
+A suíte completa incluiria treino/geração em fixtures e foi deixada de lado.
+32 testes existentes passaram na pré-auditoria anterior; log preservado em preflight/.
+Os testes novos estão em tests/test_ml_compare_expanded.py; não foram executados.
+Verificações de avaliação executadas: hashes, épocas, regressão sintética A/B/D, integridade PNG,
+manifesto congelado antes da inferência real, métricas e decomposição determinística, preservação de pesos/dados.
+git diff --check: consultar registro da conferência final.
+
+Conferência final:
+PASS — git diff --check, exit code 0.
+PASS — Sintaxe dos novos módulos e testes verificada por ast.parse; nenhum teste executado.
+PASS — 84 linhas de elegibilidade, 63 previsões e 189 pares exportados e relidos.
+PASS — Todas as métricas por split/agregado e S+D+I conferidas contra os CSVs.
+PASS — A/B em real/validation reproduziram integralmente o histórico (11/17, 14/17; CER 9/83, 3/83).
+PASS — Hash do manifesto de elegibilidade idêntico ao congelado antes da inferência real.
+PASS — Imagens, labels e D preservados desde a pré-auditoria inicial; A/B preservados desde os hashes do Windows.
+PASS — Fontes preexistentes de ML preservadas desde a pré-auditoria inicial.
+NOT RUN — 13 métodos de teste novos e suíte completa, por instrução posterior do usuário.

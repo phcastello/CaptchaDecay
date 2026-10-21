@@ -1,0 +1,4 @@
+# Preserve the exact CRLF bytes produced by csv.DictWriter and frozen by E.
+outputs/analysis/real-transfer-expanded/*.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+outputs/analysis/real-transfer-expanded/*.png binary
+outputs/runs/crnn-v2-20k-cuda-plateau/best.pt binary

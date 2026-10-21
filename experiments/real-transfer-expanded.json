@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "experiment": "E",
+  "real_data": "dataset/real",
+  "real_labels_sha256": "322a305cd3d6238a7a42afc3f6284a1a719fbb01a66af2b71f0517568fb1a43c",
+  "synthetic_data": "dataset/synthetic/v2_20k_train",
+  "historical_manifest_sha256": "0bbdc3f7a7b74206466444f98855bab13d28d8016e1615bef3382fc65abad597",
+  "parameter_count": 1186815,
+  "models": {
+    "a": {"path": "outputs/runs/crnn-v2-baseline/best.pt", "epoch": 95, "train_images": 2700, "sha256": "fe315effbcf0dc6dafaaf5856a0b175f7bde62fef1ba7aabb2eeae506c656e1b", "synthetic_correct": 185, "synthetic_edits": 160},
+    "b": {"path": "outputs/runs/crnn-v2-9k-fixed/best.pt", "epoch": 28, "train_images": 9000, "sha256": "90f7dd05955e38a6b2f0a54cca0883db8a70b38cad2a2aac512b22234fd2e8c9", "synthetic_correct": 253, "synthetic_edits": 60},
+    "d": {"path": "outputs/runs/crnn-v2-20k-cuda-plateau/best.pt", "epoch": 46, "train_images": 20000, "sha256": "da2c608b9776f7ea54e15996e8bcb1c8bcfa54f2c4fed0f8c536ff7f093bfddf", "synthetic_correct": 268, "synthetic_edits": 40}
+  },
+  "synthetic_num_images": 300,
+  "synthetic_reference_characters": 1507,
+  "human_exclusions": [
+    {"split": "train", "filename": "f25eba4f1ecc9f210a7652ce51bdb5e82f847c11e2b85ddc8ecf3ea7d502f874.png", "label": "6giL", "sha256": "f25eba4f1ecc9f210a7652ce51bdb5e82f847c11e2b85ddc8ecf3ea7d502f874", "reason": "human_excluded_uppercase_L_outside_charset", "authority": "User explicitly instructed: Tira e avisa no relatorio final"}
+  ],
+  "previous_validation": {"num_images": 17, "reference_characters": 83, "a_correct": 11, "a_edits": 9, "b_correct": 14, "b_edits": 3, "both_correct": 11, "both_incorrect": 3, "first_only_correct": 0, "second_only_correct": 3}
+}

@@ -1,5 +1,15 @@
 # CRNN sintética — experimentos controlados
 
+## Experimento E — comparação ampliada A/B/D
+
+A avaliação offline dos três checkpoints congelados em CPU, somente em
+`real/train` e `real/validation`, está documentada em
+[Experimento E](../docs/experiment-e.md). Os resultados por split, comparações
+pareadas, intervalos de Wilson e McNemar exato estão no
+[relatório científico](../outputs/analysis/real-transfer-expanded/REPORT.md).
+O conjunto `real/test` permanece reservado. O `best.pt` original de D e seu
+SHA-256 estão [publicados junto aos metadados](../outputs/runs/crnn-v2-20k-cuda-plateau/README.md).
+
 ## Avaliação de transferência em arquivos reais locais
 
 `ml.compare_transfer` compara dois checkpoints congelados somente em
