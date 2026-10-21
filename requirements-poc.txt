@@ -1,0 +1,2 @@
+# Install only in .venv-ml; does not install or replace torch.
+playwright==1.64.0

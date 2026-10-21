@@ -1,0 +1,25 @@
+<!doctype html><meta charset="utf-8"><title>LOCAL FIXTURE — simulated recognizer</title>
+<form><label for="objeto">Objeto</label><input id="objeto" name="objeto">
+<img id="captcha_image" src="/core/securimage/securimage_show.php" alt="Fixture CAPTCHA">
+<label for="captcha">CAPTCHA</label><input id="captcha" name="captcha">
+<button type="button" id="b-pesquisar">Consultar</button>
+<button type="button" id="captcha_refresh_btn">Renovar</button></form>
+<div id="tabs-rastreamento"></div>
+<script>
+const scenario = '__SCENARIO__';
+const img = document.querySelector('#captcha_image');
+const refresh = () => img.src = '/core/securimage/securimage_show.php?refresh=' + Date.now();
+document.querySelector('#captcha_refresh_btn').addEventListener('click', refresh);
+if (scenario === 'changed') document.querySelector('#captcha').addEventListener('input', refresh);
+if (scenario === 'changed_at_click') document.querySelector('#b-pesquisar').addEventListener('pointerdown', refresh);
+if (scenario === 'stale') document.querySelector('#tabs-rastreamento').textContent = 'Old tracking content';
+document.querySelector('#b-pesquisar').addEventListener('click', async () => {
+  const q = new URLSearchParams({objeto:document.querySelector('#objeto').value,
+    captcha:document.querySelector('#captcha').value, mqs:'S'});
+  const response = await fetch('/app/resultado.php?' + q);
+  const body = await response.json();
+  document.querySelector('#tabs-rastreamento').textContent = JSON.stringify(body);
+  // Mirrors the observed frontend: refresh after receiving a result.
+  if (!['rate', 'blocked'].includes(scenario)) refresh();
+});
+</script>
