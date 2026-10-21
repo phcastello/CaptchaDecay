@@ -47,7 +47,9 @@ def seed_worker(_worker_id):
 
 def versions():
     return {"python": sys.version, "torch": str(torch.__version__), "pillow": PIL.__version__, "numpy": np.__version__,
-            "cuda_build": torch.version.cuda, "threads": torch.get_num_threads()}
+            "cuda_build": torch.version.cuda, "threads": torch.get_num_threads(),
+            "cuda_matmul_allow_tf32": torch.backends.cuda.matmul.allow_tf32,
+            "cudnn_allow_tf32": torch.backends.cudnn.allow_tf32}
 
 
 def ensure_finite(value, context):
@@ -88,6 +90,90 @@ def finite_validation_cer(value, epoch):
     if not math.isfinite(result):
         raise FloatingPointError(f"NaN/Inf in validation CER at epoch {epoch}; training stopped before scheduler/checkpoint.")
     return result
+
+
+def early_stopping_configuration(config):
+    """Patience zero keeps historical experiments and legacy resumes unchanged."""
+    patience = config.get("early_stopping_patience", 0)
+    if type(patience) is not int or patience < 0:
+        raise ValueError("Early stopping patience must be a nonnegative integer.")
+    if patience == 0:
+        return {"enabled": False}
+    delta = config.get("early_stopping_min_delta", 0.002)
+    start = config.get("early_stopping_start_epoch", 11)
+    if not isinstance(delta, (int, float)) or not math.isfinite(delta) or delta < 0:
+        raise ValueError("Early stopping min_delta must be finite and nonnegative.")
+    if type(start) is not int or start < 1:
+        raise ValueError("Early stopping start_epoch must be a positive integer.")
+    return {"enabled": True, "mode": "min", "metric": "validation_cer",
+            "patience": patience, "min_delta": delta, "start_epoch": start}
+
+
+class EarlyStopping:
+    """Observe CER after validation; checkpoint selection remains independent.
+
+    The first monitored epoch establishes a reference. Later CER must be strictly
+    below reference - min_delta to reset patience. Warmup never sets a reference.
+    """
+
+    def __init__(self, config):
+        self.configuration = early_stopping_configuration(config)
+        if not self.configuration["enabled"]:
+            raise ValueError("Cannot construct disabled early stopping; use build_early_stopping.")
+        self.best_reference_cer = None
+        self.bad_epochs = 0
+        self.observations = 0
+        self.stopped = False
+
+    def step(self, validation_cer, epoch):
+        cer = finite_validation_cer(validation_cer, epoch)
+        if type(epoch) is not int or epoch < 1:
+            raise ValueError("Early stopping epoch must be a positive integer.")
+        if self.stopped:
+            raise ValueError("Early stopping already exhausted its patience; refusing to restart monitoring.")
+        start = self.configuration["start_epoch"]
+        if self.observations != max(0, epoch - start):
+            raise ValueError("Early stopping epoch mismatch; refusing a duplicate/skipped validation decision.")
+        if epoch < start:
+            return False
+        self.observations += 1
+        if self.best_reference_cer is None or cer < self.best_reference_cer - self.configuration["min_delta"]:
+            self.best_reference_cer = cer
+            self.bad_epochs = 0
+        else:
+            self.bad_epochs += 1
+        self.stopped = self.bad_epochs >= self.configuration["patience"]
+        return self.stopped
+
+    def state_dict(self):
+        return {**self.configuration, "best_reference_cer": self.best_reference_cer,
+                "bad_epochs": self.bad_epochs, "observations": self.observations, "stopped": self.stopped}
+
+    def load_state_dict(self, state, *, completed_epoch=None):
+        expected_keys = set(self.state_dict())
+        if not isinstance(state, dict) or set(state) != expected_keys:
+            raise ValueError("Incomplete early stopping checkpoint state.")
+        if any(state[key] != value for key, value in self.configuration.items()):
+            raise ValueError("Checkpoint early stopping state/configuration mismatch.")
+        bad, observations, stopped, best = (state[key] for key in
+                                            ("bad_epochs", "observations", "stopped", "best_reference_cer"))
+        if (type(bad) is not int or type(observations) is not int or type(stopped) is not bool
+                or bad < 0 or observations < 0 or bad > max(0, observations - 1)
+                or stopped != (bad >= self.configuration["patience"])):
+            raise ValueError("Invalid early stopping counters/stopped state.")
+        if observations == 0:
+            if best is not None or bad != 0 or stopped:
+                raise ValueError("Early stopping warmup state contains a validation reference.")
+        elif not isinstance(best, (int, float)) or not math.isfinite(best):
+            raise ValueError("Invalid early stopping best reference CER.")
+        if completed_epoch is not None and observations != max(0, completed_epoch - self.configuration["start_epoch"] + 1):
+            raise ValueError("Checkpoint early stopping observations differ from its completed epoch.")
+        self.best_reference_cer, self.bad_epochs = best, bad
+        self.observations, self.stopped = observations, stopped
+
+
+def build_early_stopping(config):
+    return EarlyStopping(config) if early_stopping_configuration(config)["enabled"] else None
 
 
 def update_learning_rate(optimizer, scheduler, validation_cer, epoch, start_epoch=10):
@@ -200,7 +286,7 @@ def load_checkpoint(path):
 
 
 def build_checkpoint(model, optimizer, epoch, charset, config, dataset_identity,
-                     best_metrics, history, loader_generator, scheduler=None):
+                     best_metrics, history, loader_generator, scheduler=None, early_stopping=None):
     rng = {"python": random.getstate(), "torch": torch.get_rng_state(),
            "loader": loader_generator.get_state()}
     numpy_state = np.random.get_state()
@@ -212,6 +298,14 @@ def build_checkpoint(model, optimizer, epoch, charset, config, dataset_identity,
         raise ValueError("Scheduler object does not match checkpoint configuration.")
     if scheduler is not None and scheduler.last_epoch != max(0, epoch - settings["start_epoch"]):
         raise ValueError("Cannot checkpoint scheduler before the current epoch's validation decision.")
+    stopping_settings = early_stopping_configuration(config)
+    if stopping_settings["enabled"] != (early_stopping is not None):
+        raise ValueError("Early stopping object does not match checkpoint configuration.")
+    if early_stopping is not None:
+        if early_stopping.configuration != stopping_settings:
+            raise ValueError("Early stopping object/configuration mismatch.")
+        # Validate that this epoch's decision is already included in the saved state.
+        early_stopping.load_state_dict(early_stopping.state_dict(), completed_epoch=epoch)
     return {"format_version": 1, "model_state_dict": model.state_dict(),
             "optimizer_state_dict": optimizer.state_dict(), "epoch": epoch,
             "model_config": model.config, "charset": charset.to_dict(), "config": config,
@@ -219,11 +313,13 @@ def build_checkpoint(model, optimizer, epoch, charset, config, dataset_identity,
             "metrics": history[-1] if history else {}, "best_metrics": best_metrics,
             "history": history, "rng_state": rng, "versions": versions(),
             "scheduler_config": settings,
-            "scheduler_state_dict": scheduler.state_dict() if scheduler is not None else None}
+            "scheduler_state_dict": scheduler.state_dict() if scheduler is not None else None,
+            "early_stopping_config": stopping_settings,
+            "early_stopping_state_dict": early_stopping.state_dict() if early_stopping is not None else None}
 
 
 def restore_checkpoint(checkpoint, model, optimizer, charset, dataset_identity, config, loader_generator,
-                       scheduler=None):
+                       scheduler=None, early_stopping=None, *, allow_stopped=False):
     if checkpoint["charset"] != charset.to_dict():
         raise ValueError("Checkpoint charset is incompatible with the training charset.")
     if checkpoint["dataset_identity"] != dataset_identity:
@@ -256,6 +352,22 @@ def restore_checkpoint(checkpoint, model, optimizer, charset, dataset_identity, 
             raise ValueError("Checkpoint scheduler LR differs from the optimizer LR.")
     elif scheduler is not None or state is not None:
         raise ValueError("Checkpoint scheduler is incompatible with --scheduler none.")
+    stopping_settings = early_stopping_configuration(config)
+    recorded_stopping = checkpoint.get("early_stopping_config", early_stopping_configuration(checkpoint["config"]))
+    stopping_state = checkpoint.get("early_stopping_state_dict")
+    if stopping_settings["enabled"] and ("early_stopping_config" not in checkpoint or not isinstance(stopping_state, dict)):
+        raise ValueError("Checkpoint lacks saved early stopping state/configuration; a legacy checkpoint cannot enable "
+                         "early stopping on resume because its stagnation count would be lost.")
+    if stopping_settings != recorded_stopping:
+        raise ValueError("Resume early stopping configuration mismatch; use the original patience, min_delta and start_epoch.")
+    if stopping_settings["enabled"]:
+        if early_stopping is None or early_stopping.configuration != stopping_settings:
+            raise ValueError("Early stopping object does not match resume configuration.")
+        early_stopping.load_state_dict(stopping_state, completed_epoch=checkpoint["epoch"])
+        if early_stopping.stopped and not allow_stopped:
+            raise ValueError("Checkpoint already stopped after exhausting early stopping patience; refusing to restart training.")
+    elif early_stopping is not None or stopping_state is not None:
+        raise ValueError("Checkpoint early stopping state is incompatible with disabled early stopping.")
     model.load_state_dict(checkpoint["model_state_dict"])
     optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
     if scheduler is not None:
@@ -273,7 +385,8 @@ def restore_checkpoint(checkpoint, model, optimizer, charset, dataset_identity, 
 def write_history(path, history):
     fields = ["epoch", "train_loss", "val_loss", "exact_match", "cer", "num_images",
               "exact_match_4", "exact_match_5", "exact_match_6", "epoch_seconds",
-              "lr_used", "lr_next", "lr_reduced"]
+              "lr_used", "lr_next", "lr_reduced", "early_stopping_best_reference_cer",
+              "early_stopping_bad_epochs", "early_stopping_stopped"]
     def writer(stream):
         output = csv.DictWriter(stream, fieldnames=fields)
         output.writeheader()
@@ -281,8 +394,72 @@ def write_history(path, history):
     atomic_write(path, writer)
 
 
+def _assert_checkpoint_state_equal(expected, actual, context):
+    if isinstance(expected, torch.Tensor):
+        matches = isinstance(actual, torch.Tensor) and torch.equal(expected.cpu(), actual.cpu())
+    elif isinstance(expected, dict):
+        matches = isinstance(actual, dict) and expected.keys() == actual.keys()
+        if matches:
+            for key in expected:
+                _assert_checkpoint_state_equal(expected[key], actual[key], f"{context}.{key}")
+    elif isinstance(expected, (list, tuple)):
+        matches = isinstance(actual, (list, tuple)) and len(expected) == len(actual)
+        if matches:
+            for index, (left, right) in enumerate(zip(expected, actual)):
+                _assert_checkpoint_state_equal(left, right, f"{context}[{index}]")
+    else:
+        matches = expected == actual
+    if not matches:
+        raise RuntimeError(f"Dry-run checkpoint restoration differs in {context}.")
+
+
+def _dry_run_checkpoint(model, optimizer, device, charset, config, dataset_identity, loader_generator, validation):
+    """Round-trip one diagnostic epoch without changing the active policies."""
+    # Independent policy objects keep the subsequent, existing scheduler diagnostic
+    # unchanged even when a custom plateau_start_epoch is zero.
+    scheduler = build_scheduler(optimizer, config)
+    stopping = build_early_stopping(config)
+    rates = update_learning_rate(optimizer, scheduler, validation["cer"], 1,
+                                 config.get("plateau_start_epoch", 10))
+    if stopping is not None:
+        stopping.step(validation["cer"], 1)
+    history = [{"epoch": 1, "cer": validation["cer"], "exact_match": validation["exact_match"], **rates}]
+    best = {"cer": validation["cer"], "exact_match": validation["exact_match"], "epoch": 1}
+    payload = build_checkpoint(model, optimizer, 1, charset, config, dataset_identity, best, history,
+                               loader_generator, scheduler=scheduler, early_stopping=stopping)
+    with tempfile.TemporaryDirectory(prefix="captchadecay-checkpoint-smoke-") as directory:
+        path = Path(directory) / "last.pt"
+        save_checkpoint(path, payload)
+        loaded = load_checkpoint(path)  # Explicit map_location="cpu" in the common loader.
+        if any(value.device.type != "cpu" for value in loaded["model_state_dict"].values()):
+            raise RuntimeError("Dry-run checkpoint was not mapped to CPU during loading.")
+        restored_model = CRNN(**model.config).to(device)
+        restored_optimizer = torch.optim.AdamW(restored_model.parameters(), lr=config["learning_rate"],
+                                               weight_decay=config.get("weight_decay", 0.0001))
+        restored_scheduler = build_scheduler(restored_optimizer, config)
+        restored_stopping = build_early_stopping(config)
+        restored_generator = torch.Generator()
+        next_epoch = restore_checkpoint(loaded, restored_model, restored_optimizer, charset, dataset_identity,
+                                         config, restored_generator, scheduler=restored_scheduler,
+                                         early_stopping=restored_stopping)
+        expected_device = next(model.parameters()).device
+        if next_epoch != 2 or any(parameter.device != expected_device for parameter in restored_model.parameters()):
+            raise RuntimeError("Dry-run checkpoint restored an incorrect epoch or model device.")
+        restored = build_checkpoint(restored_model, restored_optimizer, 1, charset, config, dataset_identity,
+                                    best, history, restored_generator, scheduler=restored_scheduler,
+                                    early_stopping=restored_stopping)
+        for key in ("model_state_dict", "optimizer_state_dict", "rng_state", "scheduler_state_dict",
+                    "early_stopping_state_dict"):
+            _assert_checkpoint_state_equal(payload[key], restored[key], key)
+    return {"checkpoint_restored": True, "checkpoint_map_location": "cpu",
+            "checkpoint_restore_device": str(device), "checkpoint_next_epoch": next_epoch,
+            "checkpoint_optimizer_restored": True, "checkpoint_rng_restored": True,
+            "checkpoint_policies_restored": True}
+
+
 def dry_run(model, train_loader, val_loader, optimizer, device, charset, started=None,
-            scheduler=None, plateau_start_epoch=10):
+            scheduler=None, plateau_start_epoch=10, *, config=None, dataset_identity=None,
+            loader_generator=None):
     model_started = time.perf_counter()
     if started is None:
         started = model_started
@@ -300,6 +477,12 @@ def dry_run(model, train_loader, val_loader, optimizer, device, charset, started
     if first.grad is None or not torch.any(first.grad != 0).item():
         raise RuntimeError("Dry-run failed: no nonzero gradient reached the CNN.")
     result = validate(model, val_loader, device, charset, max_batches=1, return_predictions=True)
+    checkpoint_report = {}
+    if config is not None:
+        if dataset_identity is None or loader_generator is None:
+            raise ValueError("Dry-run checkpoint verification requires dataset identity and loader generator.")
+        checkpoint_report = _dry_run_checkpoint(model, optimizer, device, charset, config, dataset_identity,
+                                                 loader_generator, result)
     # A diagnostic observation exercises the active scheduler path without
     # running its warmup epochs or creating training history/checkpoints.
     diagnostic_epoch = plateau_start_epoch + 1 if scheduler is not None else 1
@@ -307,6 +490,7 @@ def dry_run(model, train_loader, val_loader, optimizer, device, charset, started
     report = {"device": str(device), "parameters": sum(p.numel() for p in model.parameters()),
               "input_shape": list(batch["images"].shape), "temporal_shape": shapes["temporal"],
               "loss": loss, "validation": result, "parameters_changed": True,
+              **checkpoint_report,
               **rates, "scheduler": "plateau" if scheduler is not None else "none",
               "scheduler_observations": scheduler.last_epoch if scheduler is not None else 0,
               "scheduler_diagnostic_epoch": diagnostic_epoch,
@@ -347,6 +531,12 @@ def parse_args(argv=None):
     parser.add_argument("--plateau-min-lr", type=float, default=0.00001)
     parser.add_argument("--plateau-start-epoch", type=nonnegative, default=10,
                         help="skip CER observations through this epoch; default: monitor starting at epoch 11")
+    parser.add_argument("--early-stopping-patience", type=nonnegative, default=0,
+                        help="validation epochs without sufficient CER improvement; 0 disables early stopping (default)")
+    parser.add_argument("--early-stopping-min-delta", type=float, default=0.002,
+                        help="minimum absolute CER improvement; must be strictly exceeded")
+    parser.add_argument("--early-stopping-start-epoch", type=positive, default=11,
+                        help="first epoch whose validation CER is monitored (inclusive)")
     parser.add_argument("--seed", type=nonnegative, default=42)
     parser.add_argument("--num-workers", type=nonnegative, default=0)
     parser.add_argument("--threads", type=positive, default=6, help="PyTorch CPU threads (default: 6)")
@@ -357,6 +547,8 @@ def parse_args(argv=None):
     args = parser.parse_args(argv)
     if not math.isfinite(args.learning_rate) or args.learning_rate <= 0:
         parser.error("--learning-rate must be finite and positive")
+    if not math.isfinite(args.early_stopping_min_delta) or args.early_stopping_min_delta < 0:
+        parser.error("--early-stopping-min-delta must be finite and nonnegative")
     if args.scheduler == "plateau":
         if not math.isfinite(args.plateau_factor) or not 0 < args.plateau_factor < 1:
             parser.error("--plateau-factor must be finite and between 0 and 1 (exclusive)")
@@ -372,6 +564,10 @@ def parse_args(argv=None):
 def run(args):
     started = time.perf_counter()
     device = resolve_device(args.device)
+    if device.type == "cuda":
+        # Keep FP32 arithmetic close to the historical CPU pipeline: no AMP/TF32.
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
     torch.set_num_threads(args.threads)
     seed_everything(args.seed)
     manifest = SyntheticManifest(args.data)
@@ -394,12 +590,14 @@ def run(args):
     model = CRNN(charset.num_classes).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=0.0001)
     scheduler = build_scheduler(optimizer, vars(args))
-    if args.dry_run:
-        dry_run(model, train_loader, val_loader, optimizer, device, charset, started=started,
-                scheduler=scheduler, plateau_start_epoch=args.plateau_start_epoch)
-        return 0
+    early_stopping = build_early_stopping(vars(args))
     config = {key: str(value) if isinstance(value, Path) else value for key, value in vars(args).items()}
     config.update(weight_decay=0.0001, gradient_max_norm=5.0, best_criterion="lowest CER, then highest exact match")
+    if args.dry_run:
+        dry_run(model, train_loader, val_loader, optimizer, device, charset, started=started,
+                scheduler=scheduler, plateau_start_epoch=args.plateau_start_epoch, config=config,
+                dataset_identity=manifest.identity, loader_generator=generator)
+        return 0
     run_dir = args.run_dir.resolve()
     history = []
     best = {"cer": float("inf"), "exact_match": -1.0, "epoch": 0}
@@ -409,7 +607,7 @@ def run(args):
             raise ValueError("Resume requires --resume <run-dir>/last.pt and the original --run-dir.")
         checkpoint = load_checkpoint(args.resume)
         start_epoch = restore_checkpoint(checkpoint, model, optimizer, charset, manifest.identity, config, generator,
-                                         scheduler=scheduler)
+                                         scheduler=scheduler, early_stopping=early_stopping, allow_stopped=True)
         history, best = checkpoint["history"], checkpoint["best_metrics"]
         if best["epoch"] == checkpoint["epoch"]:
             # Repair interruption between atomic writes of last.pt and best.pt.
@@ -422,6 +620,15 @@ def run(args):
                     or previous_best["model_config"] != model.config
                     or previous_best["epoch"] != best["epoch"]):
                 raise ValueError("best.pt is incompatible with last.pt; preserve and inspect this run directory.")
+        if early_stopping is not None and early_stopping.stopped:
+            # The final last.pt may precede interrupted best/history writes. Repair
+            # those artifacts, then leave this completed run without another batch.
+            write_history(run_dir / "history.csv", history)
+            print(f"EARLY STOPPING ALREADY COMPLETE: epoch {checkpoint['epoch']}; "
+                  f"{early_stopping.bad_epochs} monitored epochs without sufficient CER improvement "
+                  f"(min_delta {early_stopping.configuration['min_delta']:.6f}). "
+                  "Checkpoints/history are consistent; no training started.", flush=True)
+            return 0
     elif run_dir.exists() and any(run_dir.iterdir()):
         raise ValueError(f"Run directory is not empty: {run_dir}. Choose another --run-dir or explicitly --resume its last.pt.")
     if start_epoch > args.epochs:
@@ -461,13 +668,28 @@ def run(args):
         if row["lr_reduced"]:
             print("ReduceLROnPlateau: validation CER stagnated; "
                   f"learning rate: {row['lr_used']:.6g} -> {row['lr_next']:.6g}", flush=True)
+        should_stop = early_stopping.step(row["cer"], epoch) if early_stopping is not None else False
+        if early_stopping is not None:
+            row.update(early_stopping_best_reference_cer=early_stopping.best_reference_cer,
+                       early_stopping_bad_epochs=early_stopping.bad_epochs,
+                       early_stopping_stopped=early_stopping.stopped)
+            if epoch >= early_stopping.configuration["start_epoch"]:
+                print(f"Early stopping: reference CER {early_stopping.best_reference_cer:.6f}; "
+                      f"epochs without sufficient improvement: {early_stopping.bad_epochs}/"
+                      f"{early_stopping.configuration['patience']}", flush=True)
         checkpoint = build_checkpoint(model, optimizer, epoch, charset, config, manifest.identity, best, history, generator,
-                                      scheduler=scheduler)
+                                      scheduler=scheduler, early_stopping=early_stopping)
         save_checkpoint(run_dir / "last.pt", checkpoint)
         if improved:
             save_checkpoint(run_dir / "best.pt", checkpoint)
         write_history(run_dir / "history.csv", history)
         print("Validation exact match by length: " + json.dumps(validation["by_length"], sort_keys=True), flush=True)
+        if should_stop:
+            print(f"EARLY STOPPING: validation CER did not improve by more than "
+                  f"{early_stopping.configuration['min_delta']:.6f} for "
+                  f"{early_stopping.bad_epochs} monitored epochs; stopped after epoch {epoch}. "
+                  f"Best checkpoint remains epoch {best['epoch']}; best.pt and last.pt saved.", flush=True)
+            break
     return 0
 
 

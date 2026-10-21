@@ -1,0 +1,150 @@
+{
+  "device": "cuda",
+  "parameters": 1186815,
+  "input_shape": [
+    16,
+    1,
+    80,
+    215
+  ],
+  "temporal_shape": [
+    53,
+    16,
+    31
+  ],
+  "loss": 30.233667373657227,
+  "validation": {
+    "exact_match": 0,
+    "cer": 0.9382716049382716,
+    "num_images": 16,
+    "by_length": {
+      "4": {
+        "exact_match": 0,
+        "num_images": 5
+      },
+      "5": {
+        "exact_match": 0,
+        "num_images": 5
+      },
+      "6": {
+        "exact_match": 0,
+        "num_images": 6
+      }
+    },
+    "loss": 32.133602142333984,
+    "predictions": [
+      {
+        "filename": "00000008.png",
+        "expected": "79mh9u",
+        "predicted": "i9",
+        "correct": false
+      },
+      {
+        "filename": "00000013.png",
+        "expected": "szdglp",
+        "predicted": "i9",
+        "correct": false
+      },
+      {
+        "filename": "00000017.png",
+        "expected": "84ku",
+        "predicted": "i9",
+        "correct": false
+      },
+      {
+        "filename": "00000040.png",
+        "expected": "cp3ieb",
+        "predicted": "i9",
+        "correct": false
+      },
+      {
+        "filename": "00000055.png",
+        "expected": "ff4uiz",
+        "predicted": "i9",
+        "correct": false
+      },
+      {
+        "filename": "00000056.png",
+        "expected": "6i4r",
+        "predicted": "i9",
+        "correct": false
+      },
+      {
+        "filename": "00000057.png",
+        "expected": "uw5d",
+        "predicted": "i9",
+        "correct": false
+      },
+      {
+        "filename": "00000061.png",
+        "expected": "fl6gkl",
+        "predicted": "i9",
+        "correct": false
+      },
+      {
+        "filename": "00000085.png",
+        "expected": "48m8l",
+        "predicted": "i9",
+        "correct": false
+      },
+      {
+        "filename": "00000099.png",
+        "expected": "wuut",
+        "predicted": "i9",
+        "correct": false
+      },
+      {
+        "filename": "00000100.png",
+        "expected": "dkd8v",
+        "predicted": "i9",
+        "correct": false
+      },
+      {
+        "filename": "00000102.png",
+        "expected": "mgrzg",
+        "predicted": "i9",
+        "correct": false
+      },
+      {
+        "filename": "00000135.png",
+        "expected": "b4c3i",
+        "predicted": "i9",
+        "correct": false
+      },
+      {
+        "filename": "00000137.png",
+        "expected": "3phf9s",
+        "predicted": "i9",
+        "correct": false
+      },
+      {
+        "filename": "00000138.png",
+        "expected": "shaum",
+        "predicted": "i9",
+        "correct": false
+      },
+      {
+        "filename": "00000147.png",
+        "expected": "pag6",
+        "predicted": "i9",
+        "correct": false
+      }
+    ]
+  },
+  "parameters_changed": true,
+  "checkpoint_restored": true,
+  "checkpoint_map_location": "cpu",
+  "checkpoint_restore_device": "cuda",
+  "checkpoint_next_epoch": 2,
+  "checkpoint_optimizer_restored": true,
+  "checkpoint_rng_restored": true,
+  "checkpoint_policies_restored": true,
+  "lr_used": 0.001,
+  "lr_next": 0.001,
+  "lr_reduced": false,
+  "scheduler": "plateau",
+  "scheduler_observations": 1,
+  "scheduler_diagnostic_epoch": 11,
+  "seconds": 21.523317309096456,
+  "model_seconds": 1.1686323108151555
+}

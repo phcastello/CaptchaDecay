@@ -1,0 +1,144 @@
+{
+  "path": "dataset/synthetic/v2_20k_train",
+  "counts": {
+    "train": 20000,
+    "validation": 300
+  },
+  "image_dimensions": {
+    "width": 215,
+    "height": 80
+  },
+  "charset": "23456789abcdefghiklmnprstuvwyz",
+  "unique_image_sha256": 20300,
+  "training_generation_seed": 20261020,
+  "training_index_range": [
+    3000,
+    22999
+  ],
+  "counts_by_length": {
+    "train": {
+      "4": 5489,
+      "5": 9187,
+      "6": 5324
+    },
+    "validation": {
+      "4": 84,
+      "5": 125,
+      "6": 91
+    }
+  },
+  "png_bytes": 84466406,
+  "labels_sha256": "51cefd06231b9e1a01f99d6d46b4560b3a46c59604cee21861b8d5820951955e",
+  "rows_sha256": "79d2122a30c7b8675c9981ee4bb990ab064ed61f412ff1c9eaba90c6da906890",
+  "image_records_sha256": "90de5204347c81a98623404fc52615d7b3dfab1fb1bba969165bcb2e5af6d2d4",
+  "integrity_manifest_sha256": "8390d2e5aa0e99acbdd308938d9f80b3ff07d5a975bb31b67d7776e33863063a",
+  "generation_sha256": "34e087cc5ff9403c659f3d6d7ef0f8f2ce915784350e5a3ef2a62343e9a67492",
+  "historical_manifest_sha256": "0bbdc3f7a7b74206466444f98855bab13d28d8016e1615bef3382fc65abad597",
+  "historical_labels_sha256": "2158f8746674f893770245220177634d69cd77a6298373e8b74d0f9a9b1d7b95",
+  "historical_image_records_sha256": "393d05912b302a8363b8186c6a7074e23f5a4e5f62d1564d334d063c30387b63",
+  "historical_validation_verified_before_and_after": true,
+  "exact_duplicates": 0,
+  "train_validation_overlap": 0,
+  "methodological_limit": "All 20000 training PNGs are new; comparison with B/C changes sampling as well as count.",
+  "generation": {
+    "config": {
+      "count": 20000,
+      "output": "/home/phc/CaptchaDecay/dataset/synthetic/v2_20k_train",
+      "seed": 20261020,
+      "train_ratio": 1,
+      "validation_ratio": 0,
+      "charset": "abcdefghiklmnprstuvwyz23456789",
+      "width": 215,
+      "height": 80,
+      "min_length": 4,
+      "max_length": 6,
+      "length_distribution": {
+        "4": 27,
+        "5": 46,
+        "6": 27
+      },
+      "perturbation": [
+        0.9,
+        1
+      ],
+      "num_lines": [
+        5,
+        8
+      ],
+      "noise_level": [
+        2,
+        4
+      ],
+      "font_ratio": [
+        0.42,
+        0.52
+      ],
+      "image_bg_color": [
+        "#ffffff",
+        "#f6f6f6"
+      ],
+      "text_color": [
+        "#606060",
+        "#707070",
+        "#808080"
+      ],
+      "line_color": [
+        "#606060",
+        "#808080"
+      ]
+    },
+    "visual_config_sha256": "f3dd425af956b5ac232759861220258f3d339ccccba60c8604d1a0387245951b",
+    "runtime": {
+      "php_version": "8.3.6",
+      "php_binary": "/home/phc/CaptchaDecay/.tools/php/usr/bin/php8.3",
+      "os_family": "Linux",
+      "gd": {
+        "GD Version": "2.3.3",
+        "FreeType Support": true,
+        "FreeType Linkage": "with freetype",
+        "GIF Read Support": true,
+        "GIF Create Support": true,
+        "JPEG Support": true,
+        "PNG Support": true,
+        "WBMP Support": true,
+        "XPM Support": true,
+        "XBM Support": true,
+        "WebP Support": true,
+        "BMP Support": true,
+        "AVIF Support": false,
+        "TGA Read Support": true,
+        "JIS-mapped Japanese Font Support": false
+      },
+      "freetype_version": null
+    },
+    "securimage": {
+      "version": "4.0.2",
+      "reference": "aabde76d839d75a238970661187f83312c2eeda7",
+      "source_path": "/home/phc/CaptchaDecay/vendor/dapphp/securimage",
+      "font_path": "/home/phc/CaptchaDecay/vendor/dapphp/securimage/AHGBold.ttf",
+      "font_sha256": "178f01eac93e97cb1a32b614075b94fc4c16274571f9a6bc20eef336bd4f03bd",
+      "source_tree_sha256": "331ee22034cbf8c26705a4e7a23535f5ae8ea9f7dcf5b39acd69646ed1157582"
+    },
+    "files_sha256": {
+      "generator/generate.php": "d6d01ae1415ab18192ce163b8d965332269c7b131847eee04d6018a3e936d479",
+      "generator/config.php": "81f8190b0d079e727a6ab64b495a1421f409e48d1465c3d1f550ad2aef88e4f9",
+      "composer.lock": "c6d67ec96f000176ad12a7f19a3ad378dfd3047b470188250bf060d5a5974666"
+    },
+    "methodology": "All training images are newly sampled locally with the official v2 Securimage generator. Comparison with experiment B changes both training quantity and generator sampling; no prior training PNGs reused. PNG rendering may vary across PHP/GD/FreeType/platform versions; the exact local runtime, dependency tree and font hashes are recorded here.",
+    "generator_stdout": "Concluído: train=20000, validation=0.",
+    "command": [
+      "/home/phc/CaptchaDecay/scripts/php-local",
+      "generator/generate.php",
+      "--count",
+      "20000",
+      "--seed",
+      "20261020",
+      "--train-ratio",
+      "1",
+      "--validation-ratio",
+      "0",
+      "--output",
+      "/home/phc/CaptchaDecay/dataset/synthetic/v2_20k_train"
+    ]
+  }
+}

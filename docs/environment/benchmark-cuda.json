@@ -1,0 +1,100 @@
+{
+  "device": "cuda:0",
+  "gpu": "NVIDIA RTX A2000 12GB",
+  "gpu_uuid": "bc252296-7ce0-02fb-acbd-4f371c943715",
+  "cuda_visible_devices": "GPU-bc252296-7ce0-02fb-acbd-4f371c943715",
+  "nvidia_smi": {
+    "available": true,
+    "memory_unit": "MiB",
+    "physical_devices": [
+      {
+        "index": "0",
+        "name": "NVIDIA RTX A2000 12GB",
+        "uuid": "GPU-bc252296-7ce0-02fb-acbd-4f371c943715",
+        "memory.total": "11514",
+        "memory.free": "10779",
+        "driver_version": "535.309.01",
+        "pci.bus_id": "0000DFB4:00:00.0"
+      }
+    ]
+  },
+  "precision": "float32",
+  "amp": false,
+  "matmul_allow_tf32": false,
+  "cudnn_allow_tf32": false,
+  "seed": 42,
+  "batch_size": 16,
+  "num_workers": 0,
+  "pin_memory": false,
+  "parameters": 1186815,
+  "dataset": {
+    "manifest_sha256": "51cefd06231b9e1a01f99d6d46b4560b3a46c59604cee21861b8d5820951955e",
+    "images_sha256": "91673adb28be454ceb55d23508b96dfae653c928e6fccfcf62ec7b9eb624b04c",
+    "fingerprint": "b96386a19db32c50e837926b17937a1a7d3f30efc79dfcb28b402c7673abdb78",
+    "counts": {
+      "train": 20000,
+      "validation": 300
+    },
+    "image_count": 20300
+  },
+  "versions": {
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "torch": "2.14.1+cu126",
+    "pillow": "12.3.0",
+    "numpy": "2.5.4",
+    "cuda_build": "12.6",
+    "threads": 6,
+    "cuda_matmul_allow_tf32": false,
+    "cudnn_allow_tf32": false
+  },
+  "warmup_training_batches": 3,
+  "measured_training_batches": 8,
+  "warmup_validation_batches": 1,
+  "measured_validation_batches": 3,
+  "training_seconds_per_batch": 0.049626537424046546,
+  "training_batch_stdev_seconds": 0.00022126091587847436,
+  "validation_seconds_per_batch": 0.02048510095725457,
+  "training_batch_seconds": [
+    0.04942616121843457,
+    0.049631861969828606,
+    0.0500072636641562,
+    0.04932096181437373,
+    0.04974276293069124,
+    0.049719562754034996,
+    0.049443962052464485,
+    0.04971976298838854
+  ],
+  "validation_batch_seconds": [
+    0.021396970376372337,
+    0.020167467184364796,
+    0.019890865311026573
+  ],
+  "measured_training_losses": [
+    19.690174102783203,
+    12.552241325378418,
+    7.3235554695129395,
+    5.125659465789795,
+    3.9925765991210938,
+    3.825435161590576,
+    4.0085320472717285,
+    4.17896842956543
+  ],
+  "training_batches_per_epoch": 1250,
+  "validation_batches_per_epoch": 19,
+  "estimated_training_epoch_seconds": 62.03317178005818,
+  "estimated_validation_epoch_seconds": 0.3892169181878368,
+  "estimated_epoch_seconds": 62.42238869824602,
+  "estimated_30_epochs_seconds": 1872.6716609473806,
+  "estimated_100_epochs_seconds": 6242.238869824601,
+  "startup_seconds": 20.055952317081392,
+  "memory": {
+    "total_bytes": 11823546368,
+    "free_before_model_bytes": 11716591616,
+    "free_after_benchmark_bytes": 11303452672,
+    "peak_allocated_bytes": 303842304,
+    "peak_reserved_bytes": 373293056
+  },
+  "training_updates_in_memory": 11,
+  "checkpoints_written": false,
+  "limitations": "Short sample; estimate includes loading/preprocessing, host-to-device transfer, original train_step finite checks, clipping, AdamW and validation/decoding. Excludes checkpoint/history I/O, scheduler decisions, startup and later-epoch variation. Validation estimate uses full batches although its last batch may be smaller. Dataset manifest verification warms filesystem caches. No full epoch is executed; the scratch model and optimizer are discarded."
+}

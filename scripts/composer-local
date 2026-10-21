@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+captcha_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ ! -f "$captcha_root/.tools/composer.phar" ]]; then
+    printf '%s\n' 'Composer local ausente; execute ./scripts/setup-php-local.sh.' >&2
+    exit 1
+fi
+export COMPOSER_HOME="$captcha_root/.tools/composer-home"
+export COMPOSER_CACHE_DIR="$captcha_root/.tools/composer-cache"
+exec "$captcha_root/scripts/php-local" "$captcha_root/.tools/composer.phar" "$@"

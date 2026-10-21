@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Ubuntu Noble PHP extracted into this repository; no global PHP configuration.
+set -euo pipefail
+captcha_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+captcha_php="$captcha_root/.tools/php/usr/bin/php8.3"
+captcha_extensions="$captcha_root/.tools/php/usr/lib/php/20230831"
+if [[ ! -x "$captcha_php" ]]; then
+    printf '%s\n' 'PHP local ausente; execute ./scripts/setup-php-local.sh.' >&2
+    exit 1
+fi
+exec "$captcha_php" -n -d "extension_dir=$captcha_extensions" \
+    -d extension=ctype -d extension=fileinfo -d extension=iconv \
+    -d extension=mbstring -d extension=phar -d extension=tokenizer \
+    -d extension=dom -d extension=simplexml -d extension=xml \
+    -d extension=xmlreader -d extension=xmlwriter -d extension=curl \
+    -d extension=gd "$@"

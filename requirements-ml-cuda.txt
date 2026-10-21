@@ -1,0 +1,6 @@
+# Ubuntu 24.04 / Python 3.12 / A2000: retain the historical package versions.
+# CUDA 12.x minor compatibility supports driver 535; verify the full CRNN.
+# The explicit local version prevents resolution to a CPU-only torch wheel.
+--extra-index-url https://download.pytorch.org/whl/cu126
+-r requirements-ml.txt
+torch==2.14.1+cu126

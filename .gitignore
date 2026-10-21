@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 .venv-directml/
 .venv-ml/
+.tools/
 /outputs/
 *.pt
 *.pth

@@ -1,0 +1,149 @@
+{
+  "observed_date": "2026-10-20",
+  "repository": {
+    "branch": "main",
+    "commit": "13d7cad3023278600080a80d1c52bd9bbc86e4f2",
+    "remote": "https://github.com/phcastello/CaptchaDecay",
+    "updated_with_fast_forward": true,
+    "changes_committed": false,
+    "pushed": false
+  },
+  "system": {
+    "distribution": "Ubuntu 24.04.4 LTS",
+    "architecture": "x86_64",
+    "kernel": "6.8.0-139-generic",
+    "user": "phc",
+    "sudo_requires_password": true,
+    "ram_total_gib_rounded": 23,
+    "ram_available_gib_rounded": 21,
+    "disk_free_gib_initial_rounded": 17,
+    "disk_free_gib_final_rounded": 11
+  },
+  "gpu": {
+    "physical_index": 0,
+    "uuid": "GPU-bc252296-7ce0-02fb-acbd-4f371c943715",
+    "name": "NVIDIA RTX A2000 12GB",
+    "driver": "535.309.01",
+    "nvidia_smi_cuda_version": "12.2",
+    "nvidia_smi_total_mib": 11514,
+    "torch_total_bytes": 11823546368,
+    "torch_cuda_runtime": "12.6",
+    "cuda_available": true,
+    "full_crnn_cuda_verified": true,
+    "driver_modified": false,
+    "active_processes_at_handoff": 0
+  },
+  "python": {
+    "version": "3.12.3",
+    "venv": ".venv-ml",
+    "executable": "/home/phc/CaptchaDecay/.venv-ml/bin/python",
+    "include_system_site_packages": false,
+    "user_site_enabled": false,
+    "global_pip_modified": false,
+    "torch": "2.14.1+cu126",
+    "numpy": "2.5.4",
+    "pillow": "12.3.0",
+    "lockfile": "docs/gpu-python-freeze.txt",
+    "requirements": "requirements-ml-cuda.txt",
+    "pip_check": "passed",
+    "precision": "float32",
+    "amp": false,
+    "tf32": false
+  },
+  "php": {
+    "system_version": "8.3.6",
+    "system_composer": "2.7.1",
+    "optional_local_version": "8.3.6",
+    "optional_local_composer": "2.10.3",
+    "gd": "2.3.3",
+    "freetype_support": true,
+    "freetype_package": "2.13.2+dfsg-1ubuntu0.2",
+    "securimage": "4.0.2",
+    "composer_lock_modified": false,
+    "php_ini_modified": false,
+    "generation_warnings": 0,
+    "deterministic_smoke_images_per_run": 12,
+    "deterministic_smoke_runs": 2
+  },
+  "apt_packages": {
+    "python312": "3.12.3-1ubuntu0.17",
+    "python312_venv": "3.12.3-1ubuntu0.17",
+    "php83_cli": "8.3.6-0ubuntu0.24.04.12",
+    "php83_gd": "8.3.6-0ubuntu0.24.04.12",
+    "php_metapackages": [
+      "php-cli",
+      "php-gd",
+      "php-mbstring",
+      "php-xml",
+      "php-curl",
+      "php-zip"
+    ],
+    "composer": "2.7.1-2",
+    "libgd3": "2.3.3-9ubuntu5",
+    "libfreetype6": "2.13.2+dfsg-1ubuntu0.2"
+  },
+  "dataset": {
+    "manifest_sha256": "51cefd06231b9e1a01f99d6d46b4560b3a46c59604cee21861b8d5820951955e",
+    "images_sha256": "91673adb28be454ceb55d23508b96dfae653c928e6fccfcf62ec7b9eb624b04c",
+    "fingerprint": "b96386a19db32c50e837926b17937a1a7d3f30efc79dfcb28b402c7673abdb78",
+    "counts": {
+      "train": 20000,
+      "validation": 300
+    },
+    "image_count": 20300,
+    "training_generation_seed": 20261020,
+    "training_initialization_seed": 42,
+    "historical_validation_preserved": true,
+    "exact_duplicates": 0,
+    "train_validation_overlap": 0,
+    "summary": "docs/environment/experiment-d-dataset.json"
+  },
+  "tests": {
+    "command": "./.venv-ml/bin/python -m unittest discover -s tests -v",
+    "passed": 300,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 29.182,
+    "gpu_optional_skip_verified": true,
+    "git_diff_check": "passed",
+    "bash_syntax": "passed",
+    "cpu_warning": "NNPACK unavailable on virtualized CPU; no test failures"
+  },
+  "smoke": {
+    "report": "docs/environment/cuda-smoke.json",
+    "batch_size": 16,
+    "full_crnn": true,
+    "checkpoint_restored": true,
+    "optimizer_rng_policies_restored": true
+  },
+  "benchmark": {
+    "report": "docs/environment/benchmark-cuda.json",
+    "seconds_per_batch": 0.049626537424046546,
+    "estimated_epoch_seconds": 62.42238869824602,
+    "estimated_30_epochs_seconds": 1872.6716609473806,
+    "estimated_100_epochs_seconds": 6242.238869824601,
+    "memory": {
+      "total_bytes": 11823546368,
+      "free_before_model_bytes": 11716591616,
+      "free_after_benchmark_bytes": 11303452672,
+      "peak_allocated_bytes": 303842304,
+      "peak_reserved_bytes": 373293056
+    }
+  },
+  "manual_commands": {
+    "start": "./scripts/train-experiment-d.sh",
+    "resume": "./scripts/train-experiment-d.sh --resume",
+    "gpu_monitor": "watch -n 1 nvidia-smi"
+  },
+  "production_training_started": false,
+  "production_run_directory_created": false,
+  "setup_services_created": false,
+  "real_data_used": false,
+  "remote_captcha_requests": 0,
+  "known_limitations": [
+    "New sampling as well as increased training count compared with B/C.",
+    "Benchmark excludes checkpoint I/O, startup and later-epoch variation.",
+    "PNG rasterization can vary across PHP/GD/FreeType/platform versions.",
+    "Seed control does not guarantee bitwise equality across CPU/CUDA or platforms."
+  ]
+}

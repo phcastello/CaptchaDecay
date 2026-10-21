@@ -234,10 +234,10 @@ ou hardwares diferentes. No Windows, mantenha workers 0 inicialmente; o entry
 point protegido permite aumentar workers explicitamente no futuro.
 
 CPU sempre é o padrão. CUDA só é usada com `--device cuda`; se indisponível,
-a CLI informa erro. Uma instalação PyTorch compatível com CUDA e uma GPU
-NVIDIA serão necessárias nesse ambiente futuro. **DirectML não é suportado**:
+a CLI informa erro. O ambiente Linux da A2000, dataset de 20 mil imagens,
+early stopping e comandos do experimento D estão em
+[Treinamento CUDA no Ubuntu](../docs/gpu-training.md). **DirectML não é suportado**:
 o benchmark anterior encontrou incompatibilidade em BiLSTM, CTCLoss e Adam.
-Nenhuma VM, A2000, configuração SSH ou serviço Aegis é acessado nesta etapa.
 
 ## ReduceLROnPlateau e CER
 
